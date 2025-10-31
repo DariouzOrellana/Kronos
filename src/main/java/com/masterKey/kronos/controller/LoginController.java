@@ -1,0 +1,33 @@
+package com.masterKey.kronos.controller;
+
+
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
+@Controller
+public class LoginController {
+
+    @GetMapping("/login")
+    public String loginPage(
+            @RequestParam(value = "error", required = false) String error,
+            @RequestParam(value = "logout", required = false) String logout,
+            Model model,
+            Authentication auth
+            ) {
+        if(auth != null && auth.isAuthenticated()){
+            System.out.println("Usuario autenticado");
+            return "redirect:/home";
+        }
+
+        if (error != null) {
+            model.addAttribute("error", error);
+        }
+        if (logout != null) {
+            model.addAttribute("logout", true);
+        }
+        return "login";
+    }
+}

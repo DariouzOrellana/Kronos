@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments.html :: head"></head>
+<body class="hold-transition sidebar-mini layout-fixed">
+<div class="wrapper">
+    <div th:replace="fragments.html :: menu"></div>
+    <style>
+        .select2-container .select2-selection--single {
+            height: 38px !important; /* Ajusta según el tamaño del input */
+            padding: 6px 12px;
+            display: flex;
+            align-items: center;
+        }
+
+    </style>
+    <!-- Content Wrapper. Contains page content -->
+    <div class="content-wrapper">
+        <!-- Content Header (Page header) -->
+        <div class="content-header">
+            <div class="container-fluid">
+                <div class="row mb-2">
+                    <div class="col-sm-6">
+                        <h1 class="m-0">Lista de Ventas </h1>
+                    </div><!-- /.col -->
+                    <div class="col-sm-6">
+                        <ol class="breadcrumb float-sm-right">
+                            <li class="breadcrumb-item"><a href="/home">Home</a></li>
+                            <li class="breadcrumb-item active">Ventas</li>
+                        </ol>
+                    </div><!-- /.col -->
+                </div><!-- /.row -->
+            </div><!-- /.container-fluid -->
+        </div>
+        <!-- /.content-header -->
+
+        <!-- Main content -->
+        <section class="content">
+            <div class="container-fluid">
+
+                <!-- /.row -->
+            </div>
+            <!-- /.container-fluid -->
+        </section>
+        <!-- /.content -->
+    </div>
+
+    <div class="modal fade" id="modalAnulacion" tabindex="-1" role="dialog" aria-labelledby="modalAnulacionLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalAnulacionLabel">Anulación de Venta</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="formAnulacion">
+                        <input type="hidden" id="codigoVentaHiddenAnulacion"> <!-- Campo oculto para el código de venta -->
+                        <div class="form-group">
+                            <label for="tipoAnulacion">Tipo de Anulación</label>
+                            <select class="form-control" id="tipoAnulacion" required>
+                                <option value="">Seleccione...</option>
+                                <option value="2">Rescindir de la operación realizada</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="tipoDocumento">Tipo de Documento</label>
+                            <select class="form-control" id="tipoDocumento" required>
+                                <option value="">Seleccione...</option>
+                                <option value="36">NIT</option>
+                                <option value="13">DUI</option>
+                                <!--<option value="37">OTRO</option>-->
+                                <!--<option value="03">PASAPORTE</option>-->
+                                <!--<option value="02">CARNET DE RESIDENTE</option>-->
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="numeroDocumento">Número de Documento (Sin guiones)</label>
+                            <input type="text" class="form-control" id="numeroDocumento" placeholder="Ingrese el número de documento" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="nombreSolicita">Nombre del Solicitante</label>
+                            <input type="text" class="form-control" id="nombreSolicita" placeholder="Ingrese el nombre del solicitante" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="motivoAnulacion">Motivo de Anulación</label>
+                            <textarea class="form-control" id="motivoAnulacion" rows="3" placeholder="Ingrese el motivo de la anulación" required></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-primary" id="confirmarAnulacion">Confirmar Anulación</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para enviar correo -->
+    <div class="modal fade" id="emailModal" tabindex="-1" role="dialog" aria-labelledby="emailModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="emailModalLabel">Enviar documento por Correo</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- Formulario del correo -->
+                    <form id="emailForm">
+                        <div class="form-group">
+                            <label for="emailTo">Correo Electrónico</label>
+                            <input type="email" class="form-control" id="emailTo" placeholder="correo@gmail.com" required>
+                        </div>
+                        <input type="hidden" id="codigoVentaHidden"> <!-- Campo oculto para el código de venta -->
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-primary" id="enviarCorreoBtn">
+                        Enviar Correo
+                        <span id="loadingSpinner" class="spinner-border spinner-border-sm" style="display: none;" role="status" aria-hidden="true"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="modal fade" id="respuestaModal" tabindex="-1" role="dialog" aria-labelledby="respuestaModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="respuestaModalLabel">Resultado de la Venta</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p id="respuestaTexto"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer th:replace="fragments.html :: footer"></footer>
+</div>
+
+<div th:replace="fragments.html :: scripts"></div>
+<!--SCRIPTS PERSONALIZADOS PARA LA VISTA-->
+<script>
+    document.getElementById('numeroDocumento').addEventListener('input', function (e) {
+        // Remover cualquier carácter no numérico
+        this.value = this.value.replace(/[^0-9]/g, '');
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+
+
+        // Detectar clic en el botón "abrir-modal-anulacion"
+        const botones = document.querySelectorAll('.abrir-modal-anulacion');
+        botones.forEach(boton => {
+            boton.addEventListener('click', function () {
+                // Obtener el código de venta desde el atributo data-id
+                const codigoVenta = this.getAttribute('data-id');
+
+                // Pasar el código de venta al campo oculto del modal
+                document.getElementById('codigoVentaHiddenAnulacion').value = codigoVenta;
+                // Limpiar los campos del formulario
+                document.getElementById('tipoAnulacion').value = '';
+                document.getElementById('tipoDocumento').value = '';
+                document.getElementById('numeroDocumento').value = '';
+                document.getElementById('nombreSolicita').value = '';
+                document.getElementById('motivoAnulacion').value = '';
+                // Abrir el modal
+                $('#modalAnulacion').modal('show');
+            });
+        });
+
+        document.getElementById('confirmarAnulacion').addEventListener('click', function () {
+            const tipoAnulacion = document.getElementById('tipoAnulacion').value;
+            const tipoDocumento = document.getElementById('tipoDocumento').value;
+            const numeroDocumento = document.getElementById('numeroDocumento').value;
+            const nombreSolicita = document.getElementById('nombreSolicita').value;
+            const motivoAnulacion = document.getElementById('motivoAnulacion').value;
+            const codigoVenta = document.getElementById('codigoVentaHiddenAnulacion').value;
+
+            if (!tipoAnulacion || !tipoDocumento || !numeroDocumento || !nombreSolicita || !motivoAnulacion) {
+                Swal.fire('Error', 'Por favor complete todos los campos.', 'error');
+                return;
+            }
+
+            // Mostrar pantalla de carga
+            Swal.fire({
+                title: 'Procesando...',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+            // Obtén el token CSRF desde el meta tag
+            const csrfToken = $('meta[name="_csrf"]').attr('content');
+            const csrfHeader = $('meta[name="_csrf_header"]').attr('content');
+            fetch('/procesar_anulacion', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: JSON.stringify({
+                    codigoVenta,
+                    tipoAnulacion,
+                    tipoDocumento,
+                    numeroDocumento,
+                    nombreSolicita,
+                    motivoAnulacion
+                })
+            })
+                .then(response => {
+                    // Procesar el estado de la respuesta
+                    if (!response.ok) {
+                        // Intentar convertir la respuesta de error en JSON
+                        return response.json().then(errData => {
+                            throw new Error(JSON.stringify(errData)); // Adjuntar el JSON del error a la excepción
+                        });
+                    }
+                    return response.json(); // Convertir la respuesta exitosa a JSON
+                })
+                .then(data => {
+                    console.log(data);
+
+                    // Formatear el contenido para el modal
+                    const detalles = JSON.parse(data.detalles);
+                    console.log(detalles);
+                    const contenido = `
+                      <p><strong>Estado:</strong> ${detalles.estado || "N/A"}</p>
+                      <p><strong>Código de Generación:</strong> ${detalles.codigoGeneracion || "N/A"}</p>
+                      <p><strong>Sello Recibido:</strong> ${detalles.selloRecibido || "N/A"}</p>
+                      <p><strong>Fecha de Procesamiento:</strong> ${detalles.fhProcesamiento || "N/A"}</p>
+                      <p><strong>Descripción del Mensaje:</strong> ${detalles.descripcionMsg || "N/A"}</p>
+                      <p><strong>Observaciones:</strong></p>
+                      <ul>
+                          ${detalles.observaciones && detalles.observaciones.length > 0
+                        ? detalles.observaciones.map(obs => `<li>${obs}</li>`).join("")
+                        : "<li>No hay observaciones</li>"
+                    }
+                      </ul>
+                  `;
+
+                    // Mostrar el modal
+                    Swal.fire({
+                        title: 'Respuesta',
+                        html: contenido,
+                        icon: detalles.estado === "RECHAZADO" ? 'error' : 'success',
+                    });
+
+
+                    //$('#modalAnulacion').modal('hide'); // Cerrar el modal
+                    //document.getElementById('formAnulacion').reset(); // Limpiar el formulario
+                })
+                .catch(error => {
+                    // Manejar errores
+                    console.error("Error:", error);
+                    let errorData = JSON.parse(error.message); // Obtener los datos del servidor
+                    Swal.fire('ERROR', `${errorData.error} (Código: ${errorData.codigo})`, 'error');
+                    //alert(`Error: ${errorData.error} (Código: ${errorData.codigo})`);
+                });
+        });
+
+    });
+</script>
+<script>
+    $(document).ready(function() {
+
+        var today = new Date();
+
+        // Inicialización del Datepicker para fecha de inicio (fechaInicio)
+        $('#fechaInicio').datepicker({
+            dateFormat: 'dd/mm/yy',  // Formato dd/MM/yyyy
+            changeMonth: true,
+            changeYear: true,
+            //maxDate: today,  // No se puede seleccionar una fecha posterior a hoy
+            onSelect: function(selectedDate) {
+                // Al seleccionar la fecha de inicio, actualizar la fecha de fin
+                var date = $(this).datepicker('getDate');
+                var maxDate = new Date(date);
+                maxDate.setDate(date.getDate() + 7);  // Establecer la fecha máxima como 7 días después de la fecha seleccionada
+                $('#fechaFin').datepicker('option', 'minDate', date);  // La fecha fin no puede ser anterior a la de inicio
+                $('#fechaFin').datepicker('option', 'maxDate', maxDate);  // La fecha fin no puede ser más de 7 días después de la de inicio
+            }
+        });
+
+        // Inicialización del Datepicker para fecha de fin (fechaFin)
+        $('#fechaFin').datepicker({
+            dateFormat: 'dd/mm/yy',  // Formato dd/MM/yyyy
+            changeMonth: true,
+            changeYear: true,
+            onClose: function() {
+                // Validar si la fecha de fin está dentro del rango permitido
+                var fechaInicio = $('#fechaInicio').datepicker('getDate');
+                var fechaFin = $('#fechaFin').datepicker('getDate');
+                if (fechaFin > fechaInicio.setDate(fechaInicio.getDate() + 7)) {
+                    alert("La fecha de fin no puede ser mayor a 7 días después de la fecha de inicio.");
+                    $('#fechaFin').val('');  // Limpiar el campo de fecha fin si es inválida
+                }
+            }
+        });
+
+        // Al cargar la página, actualiza la fecha final para que esté dentro de los 7 días de la fecha de inicio
+        var fechaInicio = $('#fechaInicio').datepicker('getDate');
+        if (fechaInicio) {
+            var maxFechaFin = new Date(fechaInicio);
+            maxFechaFin.setDate(fechaInicio.getDate() + 7);
+            $('#fechaFin').datepicker('option', 'minDate', fechaInicio);  // La fecha fin no puede ser anterior a la fecha inicio
+            $('#fechaFin').datepicker('option', 'maxDate', maxFechaFin);  // La fecha fin no puede ser más de 7 días después de la fecha inicio
+        }
+
+        // Al enviar el formulario, convertir las fechas al formato adecuado (yyyy-MM-dd)
+        $("form").submit(function(event) {
+            var fechaInicio = $('#fechaInicio').datepicker('getDate');
+            var fechaFin = $('#fechaFin').datepicker('getDate');
+            if (fechaInicio && fechaFin) {
+                var formattedFechaInicio = $.datepicker.formatDate('yy-mm-dd', fechaInicio);
+                var formattedFechaFin = $.datepicker.formatDate('yy-mm-dd', fechaFin);
+                $('#fechaInicio').val(formattedFechaInicio);
+                $('#fechaFin').val(formattedFechaFin);
+            }
+        });
+
+        var table = $('#ventasTable').DataTable({
+            /*fixedColumns: {
+                start: 1
+            },*/
+            columnDefs: [
+                /*{ targets: '_all', orderable: false },*/
+                { width: '100px', targets: 0 },
+                { width: '50px', targets: 1 },
+                { width: '200px', targets: 2 },
+                { width: '100px', targets: 3 },
+                { width: '50px', targets: 3 },
+                { width: '275px', targets: 7 },
+                { width: '275px', targets: 8 },
+                { width: '275px', targets: 9 },
+
+            ],
+            pageLength: 25,
+            lengthMenu: [25, 50, 75, 100],
+            paging: true,
+            scrollCollapse: true,
+            scrollX: true,
+            scrollY: 350,
+            //stateSave: true,
+            language: {
+                search: "Buscar: ",
+                lengthMenu: "Mostrar _MENU_ registros por página",
+                info: "Mostrando _TOTAL_ registros",
+                emptyTable: "No hay ventas",
+                paginate: {
+                    previous: "Anterior",
+                    next: "Siguiente",
+                }
+            }
+        });//CIERRE DATATABLE
+
+        // Inicializar Select2
+        $('#filtroCliente, #filtroEstado').select2({
+            placeholder: "Seleccionar...",
+            allowClear: true,
+            width: "100%"
+        });
+
+        // Llenar el Select2 con los clientes únicos de la tabla
+        var clientes = new Set();
+        table.column(2).data().each(function (cliente) {
+            clientes.add(cliente);
+        });
+
+        clientes.forEach(function (cliente) {
+            $('#filtroCliente').append(new Option(cliente, cliente));
+        });
+
+        // Filtrar por cliente
+        $('#filtroCliente').on('change', function () {
+            var value = $(this).val();
+            table.column(2).search(value ? '^' + $.fn.dataTable.util.escapeRegex(value) + '$' : '', true, false).draw();
+        });
+
+        // Filtrar por estado
+        $('#filtroEstado').on('change', function () {
+            var value = $(this).val();
+            table.column(5).search(value ? '^' + $.fn.dataTable.util.escapeRegex(value) + '$' : '', true, false).draw();
+        });
+
+        $('#filtroTotal').on('keyup change', function () {
+            table.column(6).search(this.value).draw();
+        });
+
+        $('#filtroCodigoGeneracion').on('keyup change', function () {
+            table.column(7).search(this.value).draw();
+        });
+
+        $('#filtroNumeroControl').on('keyup change', function () {
+            table.column(8).search(this.value).draw();
+        });
+
+        $('#filtroSelloMH').on('keyup change', function () {
+            table.column(9).search(this.value).draw();
+        });
+
+    });//CIERRE JQUERY
+</script>
+<script>
+    $(document).ready(function () {
+
+        $(document).on("click", ".generar-reporte", function() {
+            var codigoGeneracion = $(this).data("codigogeneracion");
+            var fecEmi = $(this).data("fecemi");
+
+            // Abrir el PDF en otra pestaña
+            var url = "/generar_pdf?codigoGeneracion=" + codigoGeneracion + "&fecEmi=" + fecEmi;
+            window.open(url, "_blank");
+        });
+
+        $(document).on("click", ".generar-json", function() {
+            var codigoGeneracion = $(this).data("codigogeneracion");
+            var fecEmi = $(this).data("fecemi");
+
+            // Abrir el JSON en otra pestaña
+            var url = "/generar_json?codigoGeneracion=" + codigoGeneracion + "&fecEmi=" + fecEmi;
+            window.open(url, "_blank");
+        });
+
+
+        $('#modalAnulacion').on('hidden.bs.modal', function () {
+            location.reload();
+        });
+
+
+        //$('.procesar-venta').on('mousedown', function (event) {
+        $(document).on("mousedown", ".procesar-venta", function(event) {
+
+            if (event.button === 1 || event.button === 0) { // Detectar clic del botón central
+                event.preventDefault();
+
+                const codigoVenta = $(this).data('id');
+                const csrfToken = $('meta[name="_csrf"]').attr('content');
+
+                // Crear un formulario dinámico
+                const form = $('<form>', {
+                    method: 'POST',
+                    action: '/procesar_venta',
+                    target: '_blank' // Abrir en una nueva pestaña
+                });
+
+                // Agregar el campo `codigoVenta` al formulario
+                $('<input>', {
+                    type: 'hidden',
+                    name: 'codigoVenta',
+                    value: codigoVenta
+                }).appendTo(form);
+
+                // Agregar el token CSRF al formulario
+                $('<input>', {
+                    type: 'hidden',
+                    name: '_csrf',
+                    value: csrfToken
+                }).appendTo(form);
+
+                // Agregar el formulario al cuerpo de la página original y enviarlo
+                $(document.body).append(form);
+                form.submit();
+
+                // Eliminar el formulario dinámico después de enviarlo
+                form.remove();
+            }
+        });
+
+
+
+    });
+</script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Al hacer clic en el botón de enviar correo
+        const botonesEnviarCorreo = document.querySelectorAll(".enviar-correo");
+
+        botonesEnviarCorreo.forEach(btn => {
+            btn.addEventListener("click", function () {
+                const codigoVenta = btn.getAttribute("data-id");
+                const email = btn.getAttribute("data-email") || '';
+
+                // Cargar datos en el modal
+                document.getElementById("emailTo").value = email; // Cargar correo en el campo
+                document.getElementById("codigoVentaHidden").value = codigoVenta;
+
+                // Mostrar el modal
+                $('#emailModal').modal('show');
+            });
+        });
+
+        // Al hacer clic en el botón "Enviar Correo" en el modal
+        document.getElementById("enviarCorreoBtn").addEventListener("click", function () {
+            const email = document.getElementById("emailTo").value;
+            const codigoVenta = document.getElementById("codigoVentaHidden").value;
+            const enviarCorreoBtn = document.getElementById("enviarCorreoBtn");
+            const loadingSpinner = document.getElementById("loadingSpinner");
+
+            if (email) {
+                enviarCorreoBtn.disabled = true;
+                loadingSpinner.style.display = "inline-block";
+                fetch(`/enviar-reporte?email=${encodeURIComponent(email)}&codigoVenta=${codigoVenta}`, {
+                    method: "GET",
+                    headers: { }
+                })
+                    .then(response => {
+                        if (response.ok) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: '¡Correo Enviado!',
+                                text: 'El correo fue enviado exitosamente.',
+                                confirmButtonText: 'Aceptar'
+                            });
+                            //$('#emailModal').modal('hide');
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'ERROR',
+                                text: 'Ocurrió un problema al enviar el correo.',
+                                confirmButtonText: 'Aceptar'
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error:", error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'ERROR',
+                            text: 'Ocurrió un problema al enviar el correo.',
+                            confirmButtonText: 'Aceptar'
+                        });
+                    }).finally(() => {
+                    enviarCorreoBtn.disabled = false;
+                    loadingSpinner.style.display = "none";
+                });
+            } else {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Campo obligatorio',
+                    text: 'El campo de correo no puede estar vacío.',
+                    confirmButtonText: 'Aceptar'
+                });
+            }
+        });
+    });
+</script>
+</body>
+</html>

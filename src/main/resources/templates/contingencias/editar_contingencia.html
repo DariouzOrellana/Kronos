@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments.html :: head}"></head>
+<body class="hold-transition sidebar-mini layout-fixed">
+<div class="wrapper">
+    <nav th:replace="~{fragments.html :: menu}"></nav>
+    <div class="content-wrapper">
+        <section class="content-header">
+            <div class="container-fluid">
+                <div class="row mb-2">
+                    <div class="col-sm-6">
+                        <h1 th:text="${title}">Editar contingencia</h1>
+                    </div>
+                    <div class="col-sm-6">
+                        <ol class="breadcrumb float-sm-right">
+                            <li class="breadcrumb-item"><a th:href="@{/}">Inicio</a></li>
+                            <li class="breadcrumb-item"><a th:href="@{/contingencias}">Contingencias</a></li>
+                            <li class="breadcrumb-item active">Editar</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="content">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-12">
+                        <!-- Barra de acciones superior -->
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="mr-auto">
+                                        <a th:href="@{/contingencias}" class="btn btn-secondary">
+                                            <i class="fas fa-arrow-left"></i> Volver
+                                        </a>
+                                    </div>
+                                    <div class="mx-auto" th:if="${contingencia == null or contingencia.selloContingencia == null or #strings.isEmpty(contingencia.selloContingencia)}">
+                                        <a th:href="@{|/contingencias/${contingencia != null ? contingencia.id : 0}/enviar|}"
+                                           class="btn btn-warning">
+                                            <i class="fas fa-paper-plane"></i> Enviar contingencia
+                                        </a>
+                                    </div>
+                                    <div class="ml-auto"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h3 class="card-title m-0">Encabezado de contingencia</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label">Código generación</label>
+                                        <input type="text" class="form-control" th:value="${contingencia != null ? contingencia.codigoGeneracion : ''}" disabled>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Sello contingencia</label>
+                                        <input type="text" class="form-control" th:value="${contingencia != null ? contingencia.selloContingencia : ''}" disabled>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label d-block">Estado</label>
+                                        <span th:classappend="${(contingencia == null or contingencia.selloContingencia == null or #strings.isEmpty(contingencia.selloContingencia))} ? 'badge badge-secondary' : 'badge badge-success'"
+                                              th:text="${(contingencia == null or contingencia.selloContingencia == null or #strings.isEmpty(contingencia.selloContingencia)) ? 'Pendiente' : 'Procesada'}"></span>
+                                    </div>
+                                </div>
+
+                                <form id="formEditarContingencia">
+                                    <input type="hidden" id="contingenciaId" th:value="${contingencia != null ? contingencia.id : 0}">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <label for="tipoContingenciaId" class="form-label">Tipo de contingencia</label>
+                                            <select id="tipoContingenciaId" class="form-control" required th:disabled="${contingencia != null and contingencia.selloContingencia != null and !#strings.isEmpty(contingencia.selloContingencia)}">
+                                                <option value="" disabled th:selected="${contingencia == null || contingencia.tipoContingencia == null}">Seleccione</option>
+                                                <option th:each="t : ${tiposContingencia}"
+                                                        th:value="${t.id}"
+                                                        th:selected="${contingencia != null and contingencia.tipoContingencia != null and t.id == contingencia.tipoContingencia.id}"
+                                                        th:text="${t.nombre}"></option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="fInicio" class="form-label">Fecha inicio</label>
+                                            <input id="fInicio" type="date" class="form-control" required
+                                                   th:value="${contingencia != null ? #temporals.format(contingencia.fInicio, 'yyyy-MM-dd') : ''}"
+                                                   th:disabled="${contingencia != null and contingencia.selloContingencia != null and !#strings.isEmpty(contingencia.selloContingencia)}">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="fFin" class="form-label">Fecha fin</label>
+                                            <input id="fFin" type="date" class="form-control" required
+                                                   th:value="${contingencia != null ? #temporals.format(contingencia.fFin, 'yyyy-MM-dd') : ''}"
+                                                   th:disabled="${contingencia != null and contingencia.selloContingencia != null and !#strings.isEmpty(contingencia.selloContingencia)}">
+                                        </div>
+                                    </div>
+
+                                    <div class="row mt-3">
+                                        <div class="col-12">
+                                            <label for="motivoContingencia" class="form-label">Motivo</label>
+                                            <textarea id="motivoContingencia" class="form-control" rows="3" required
+                                                      th:text="${contingencia != null ? contingencia.motivoContingencia : ''}"
+                                                      th:disabled="${contingencia != null and contingencia.selloContingencia != null and !#strings.isEmpty(contingencia.selloContingencia)}"></textarea>
+                                        </div>
+                                    </div>
+
+                                </form>
+                            </div>
+                        </div>
+                        <!-- Detalles: Ventas de la contingencia -->
+                        <div class="card mt-3">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h3 class="card-title m-0">Ventas en la contingencia</h3>
+                            </div>
+                            <div class="card-body">
+                                <div>
+                                    <table id="tablaVentasContDet" class="table table-bordered table-striped w-100 nowrap" style="width:100%">
+                                        <thead>
+                                            <tr>
+                                                <th>ID Venta</th>
+                                                <th>Cliente</th>
+                                                <th>Código generación</th>
+                                                <th>Tipo documento</th>
+                                                <th>Fecha</th>
+                                                <th>Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr th:each="d : ${contingencia != null ? contingencia.detalles : {}}">
+                                                <td th:text="${d.venta != null ? d.venta.id : ''}"></td>
+                                                <td th:text="${d.venta != null && d.venta.nombreFactura != null ? d.venta.nombreFactura : ''}"></td>
+                                                <td th:text="${d.venta != null ? d.venta.codigoGeneracion : ''}"></td>
+                                                <td th:text="${d.venta != null && d.venta.tipoDocumento != null ? d.venta.tipoDocumento.nombre : ''}"></td>
+                                                <td th:text="${d.venta != null ? #temporals.format(d.venta.fecha, 'dd/MM/yyyy') : ''}"></td>
+                                                <td th:text="${d.venta != null ? d.venta.total : ''}"></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Barra de acciones inferior -->
+                        <div class="card mt-3">
+                            <div class="card-body">
+                                <div class="d-flex">
+                                    <div class="mr-auto"></div>
+                                    <div class="ml-auto d-flex align-items-center">
+                                        <a th:if="${contingencia == null or contingencia.selloContingencia == null or #strings.isEmpty(contingencia.selloContingencia)}"
+                                           th:href="@{|/contingencias/${contingencia != null ? contingencia.id : 0}/enviar|}"
+                                           class="btn btn-warning mr-2" id="btnEnviarBottom">
+                                            <i class="fas fa-paper-plane"></i> Enviar contingencia
+                                        </a>
+                                        <button type="submit" form="formEditarContingencia" class="btn btn-primary" id="btnGuardar"
+                                                th:disabled="${contingencia != null and contingencia.selloContingencia != null and !#strings.isEmpty(contingencia.selloContingencia)}">
+                                            <i class="fas fa-save"></i> Guardar cambios
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+    <footer th:replace="~{fragments.html :: footer}"></footer>
+</div>
+<div th:replace="~{fragments.html :: scripts}"></div>
+<script>
+    (function(){
+        const form = document.getElementById('formEditarContingencia');
+        if (!form) return;
+        const id = document.getElementById('contingenciaId')?.value || '';
+        const fInicio = document.getElementById('fInicio');
+        const fFin = document.getElementById('fFin');
+
+        function validateDates(){
+            if (fInicio && fFin && fInicio.value && fFin.value){
+                if (fInicio.value > fFin.value){
+                    fInicio.setCustomValidity('La fecha inicio no puede ser mayor que la fecha fin');
+                    fFin.setCustomValidity('La fecha fin no puede ser menor que la fecha inicio');
+                } else {
+                    fInicio.setCustomValidity('');
+                    fFin.setCustomValidity('');
+                }
+            } else {
+                if (fInicio) fInicio.setCustomValidity('');
+                if (fFin) fFin.setCustomValidity('');
+            }
+        }
+        if (fInicio) fInicio.addEventListener('change', validateDates);
+        if (fFin) fFin.addEventListener('change', validateDates);
+
+        form.addEventListener('submit', function(e){
+            e.preventDefault();
+            e.stopPropagation();
+            validateDates();
+            if (!form.checkValidity()){
+                form.reportValidity();
+                return;
+            }
+            const payload = {
+                tipoContingenciaId: document.getElementById('tipoContingenciaId')?.value || null,
+                fInicio: document.getElementById('fInicio')?.value || null,
+                fFin: document.getElementById('fFin')?.value || null,
+                motivoContingencia: document.getElementById('motivoContingencia')?.value || ''
+            };
+            const btn = document.getElementById('btnGuardar');
+            if (btn) { btn.disabled = true; btn.innerText = 'Guardando...'; }
+            fetch(`/contingencias/${id}/actualizar`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(async (r) => {
+                let data; try { data = await r.json(); } catch (_) { data = { ok:false, message:'Respuesta inválida del servidor' }; }
+                if (r.ok && data && data.ok){
+                    if (window.Swal && Swal.fire){
+                        Swal.fire({ icon:'success', title:'Actualizado', text:data.message || 'Operación exitosa' })
+                            .then(() => { window.location.href = '/contingencias'; });
+                    } else {
+                        window.location.href = '/contingencias';
+                    }
+                } else {
+                    const msg = (data && data.message) ? data.message : 'Error al actualizar';
+                    if (window.Swal && Swal.fire){
+                        Swal.fire({ icon:'error', title:'Error', text: msg });
+                    } else {
+                        alert(msg);
+                    }
+                }
+            }).catch(err => {
+                const msg = 'Error de red o servidor. ' + (err && err.message ? err.message : '');
+                if (window.Swal && Swal.fire){
+                    Swal.fire({ icon:'error', title:'Error', text: msg });
+                } else {
+                    alert(msg);
+                }
+            }).finally(() => {
+                if (btn) { btn.disabled = false; btn.innerText = 'Guardar cambios'; }
+            });
+        });
+        // Init DataTable para ventas de la contingencia
+        if (window.jQuery && $('#tablaVentasContDet').length) {
+            const style = document.createElement('style');
+            style.textContent = 'table.dataTable{table-layout:auto !important;}';
+            document.head.appendChild(style);
+            const sel = '#tablaVentasContDet';
+            const t = $.fn.dataTable.isDataTable(sel)
+                ? $(sel).DataTable()
+                : $(sel).DataTable({
+                    pageLength: 10,
+                    order: [ [0, 'desc'] ],
+                    scrollX: true,
+                    autoWidth: true,
+                    language: { url: 'https://cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json' }
+                });
+            function safeAdjust(){
+                try { const c = t && t.table ? t.table().container() : null; if (c) { t.columns.adjust(); } } catch(e){}
+            }
+            setTimeout(safeAdjust, 0);
+            window.addEventListener('resize', safeAdjust);
+        }
+    })();
+</script>
+</body>
+</html>

@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments.html :: head}"></head>
+<body class="hold-transition sidebar-mini layout-fixed">
+<div class="wrapper">
+    <div th:replace="~{fragments.html :: menu}"></div>
+
+    <!-- Content Wrapper. Contains page content -->
+    <div class="content-wrapper">
+        <!-- Content Header (Page header) -->
+        <div class="content-header">
+            <div class="container-fluid">
+                <div class="row mb-2">
+                    <div class="col-sm-6">
+                        <h1 class="m-0">Ventas</h1>
+                    </div><!-- /.col -->
+                    <div class="col-sm-6">
+                        <ol class="breadcrumb float-sm-right">
+                            <li class="breadcrumb-item"><a href="/home">Home</a></li>
+                            <li class="breadcrumb-item active">Ventas</li>
+                        </ol>
+                    </div><!-- /.col -->
+                </div><!-- /.row -->
+            </div><!-- /.container-fluid -->
+        </div>
+        <!-- /.content-header -->
+
+        <!-- Main content -->
+        <section class="content">
+            <div class="container-fluid">
+
+                <div class="row">
+                    <div class="col-12">
+                        <!-- Barra de acciones superior estándar -->
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="mr-auto"></div>
+                                    <div class="mx-auto">
+                                        <a th:href="@{/ventas/crear}" class="btn btn-primary">
+                                            <i class="fas fa-plus"></i> Nueva venta
+                                        </a>
+                                    </div>
+                                    <div class="ml-auto"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Buscador por fecha debajo de las acciones -->
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <form th:action="@{/ventas}" method="get" class="form-inline">
+                                    <div class="form-group mb-2 mr-2">
+                                        <label for="fecha" class="mr-2">Fecha</label>
+                                        <input id="fecha" name="fecha" type="date" class="form-control"
+                                               th:value="${#temporals.format(selectedDate, 'yyyy-MM-dd')}">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary mb-2">Buscar</button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h3 class="card-title m-0" th:text="${'Ventas de ' + #temporals.format(selectedDate, 'dd/MM/yyyy')}">Ventas</h3>
+                            </div>
+                            <div class="card-body">
+                                <!-- Evitar .table-responsive cuando se usa DataTables con scrollX para prevenir conflictos -->
+                                <div>
+                                    <table id="tablaVentas" class="table table-bordered table-striped w-100 nowrap" style="width:100%">
+                                        <thead>
+                                            <tr>
+                                                <th>Acciones</th>
+                                                <th>ID</th>
+                                                <th>Estado</th>
+                                                <th>Usuario</th>
+                                                <th>Cliente</th>
+                                                <th>Doc.</th>
+                                                <th>Fecha</th>
+                                                <th>Total</th>
+                                                <th>Código Generación</th>
+                                                <th>Número Control</th>
+                                                <th>Sello MH</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr th:each="v : ${ventas}">
+                                                <td class="text-nowrap">
+                                                    <a th:if="${v.selloMh == null || #strings.isEmpty(v.selloMh)}" th:href="@{'/ventas/' + ${v.id} + '/enviar-dte'}" class="btn btn-sm btn-warning" title="Enviar DTE" target="_blank" rel="noopener noreferrer">
+                                                        <i class="fas fa-paper-plane"></i>
+                                                    </a>
+                                                    <button type="button" class="btn btn-sm btn-secondary btn-enviar-correo" title="Enviar por correo"
+                                                            th:attr="data-venta-id=${v.id},data-email=${v.correo}">
+                                                        <i class="fas fa-envelope"></i>
+                                                    </button>
+                                                    <a th:href="@{'/ventas/' + ${v.id} + '/pdf'}" class="btn btn-sm btn-secondary" title="Ver PDF" target="_blank" rel="noopener noreferrer">
+                                                        <i class="fas fa-file-pdf"></i>
+                                                    </a>
+                                                    <a th:href="@{'/ventas/' + ${v.id} + '/json'}" class="btn btn-sm btn-secondary" title="Ver JSON" target="_blank" rel="noopener noreferrer">
+                                                        <i class="fas fa-code"></i>
+                                                    </a>
+                                                    <button th:if="${(not #strings.isEmpty(v.selloMh)) and (v.contingencia == 0) and ( #strings.isEmpty(v.codigoGeneracionAnulacion) )}"
+                                                            type="button" class="btn btn-sm btn-danger btn-anular-venta" title="Anular venta"
+                                                            th:attr="data-venta-id=${v.id}">
+                                                        <i class="fas fa-ban"></i>
+                                                    </button>
+                                                </td>
+                                                <td th:text="${v.id}"></td>
+                                                <td>
+                                                    <span class="badge"
+                                                          th:text="${(not #strings.isEmpty(v.codigoGeneracionAnulacion)) ? 'Anulada' : (v.contingencia == 1 ? 'Contingencia' : ((v.selloMh != null and not #strings.isEmpty(v.selloMh)) ? 'Procesado' : 'Pendiente'))}"
+                                                          th:classappend="${(not #strings.isEmpty(v.codigoGeneracionAnulacion)) ? 'badge-danger' : (v.contingencia == 1 ? 'badge-warning' : ((v.selloMh != null and not #strings.isEmpty(v.selloMh)) ? 'badge-success' : 'badge-warning'))}">
+                                                    </span>
+                                                </td>
+                                                <td th:text="${v.usuario != null ? v.usuario.username : ''}"></td>
+                                                <td th:text="${v.nombreFactura != null ? v.nombreFactura : ''}"></td>
+                                                <td th:text="${v.tipoDocumento != null ? v.tipoDocumento.nombre : ''}"></td>
+                                                <td th:text="${#temporals.format(v.fecha, 'dd/MM/yyyy')}"></td>
+                                                <td th:text="${#numbers.formatDecimal(v.total, 1, 'POINT', 2, 'POINT')}"></td>
+                                                <td th:text="${v.codigoGeneracion}"></td>
+                                                <td th:text="${v.numeroControl}"></td>
+                                                <td th:text="${v.selloMh}"></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- /.row -->
+
+            </div><!-- /.container-fluid -->
+        </section>
+        <!-- /.content -->
+    </div>
+
+    <footer th:replace="~{fragments.html :: footer}"></footer>
+</div>
+<div th:replace="~{fragments.html :: scripts}"></div>
+
+<!-- Modal: Enviar por correo -->
+<div class="modal fade" id="modalEnviarCorreo" tabindex="-1" role="dialog" aria-labelledby="modalEnviarCorreoLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEnviarCorreoLabel">Enviar por correo</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="formEnviarCorreo">
+                    <input type="hidden" id="correoVentaId" name="ventaId" value="">
+                    <div class="form-group">
+                        <label for="correoDestino">Correo destino</label>
+                        <input type="email" class="form-control" id="correoDestino" name="correo" placeholder="correo@dominio.com" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" id="btnModalEnviarCorreo">Enviar</button>
+            </div>
+        </div>
+    </div>
+    </div>
+<script>
+    document.addEventListener('DOMContentLoaded', function(){
+        if (window.jQuery && $('#tablaVentas').length) {
+            // Forzar auto layout para permitir ajuste automático de ancho
+            const style = document.createElement('style');
+            style.textContent = 'table.dataTable{table-layout:auto !important;}';
+            document.head.appendChild(style);
+
+            const sel = '#tablaVentas';
+            const table = $.fn.dataTable.isDataTable(sel)
+                ? $(sel).DataTable()
+                : $(sel).DataTable({
+                    pageLength: 10,
+                    order: [ [1, 'desc'] ],
+                    scrollX: true,
+                    autoWidth: true,
+                    language: { url: 'https://cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json' }
+                });
+
+            function safeAdjust(){
+                try {
+                    const container = table && table.table ? table.table().container() : null;
+                    if (container) { table.columns.adjust(); }
+                } catch (e) { /* noop */ }
+            }
+            // Ajuste diferido y en resize
+            setTimeout(safeAdjust, 0);
+            window.addEventListener('resize', safeAdjust);
+
+            // Abrir modal de correo, precargar ventaId y correo
+            $(document).on('click', '.btn-enviar-correo', function(){
+                const ventaId = $(this).data('venta-id');
+                const email = ($(this).data('email') || '').toString();
+                $('#correoVentaId').val(ventaId || '');
+                $('#correoDestino').val(email || '');
+                $('#modalEnviarCorreo').modal('show');
+            });
+
+            // Handler del botón Enviar (stub para que agregues tu lógica)
+            $('#btnModalEnviarCorreo').on('click', function(){
+                const ventaId = $('#correoVentaId').val();
+                const email = $('#correoDestino').val();
+                // TODO: Implementar lógica para enviar correo (fetch/POST)
+                console.log('Enviar correo - Venta ID:', ventaId, 'Email:', email);
+                // Cerrar modal tras stub
+                $('#modalEnviarCorreo').modal('hide');
+            });
+
+            // Abrir modal de anulación y precargar ventaId
+            $(document).on('click', '.btn-anular-venta', function(){
+                const ventaId = $(this).data('venta-id');
+                $('#anularVentaId').val(ventaId || '');
+                $('#formAnularVenta')[0].reset();
+                // Selects simples sin Select2
+                // Máscara dinámica DUI/NIT
+                (function(){
+                    const $tipo = $('#tipoDocSolicita');
+                    const $num = $('#numDocSolicita');
+                    function onlyDigits(s){ return (s||'').replace(/\D+/g,''); }
+                    function fmtDUI(d){
+                        d = onlyDigits(d).slice(0,9);
+                        if (d.length <= 8) return d;
+                        return d.slice(0,8) + '-' + d.slice(8);
+                    }
+                    function fmtNIT(d){
+                        d = onlyDigits(d).slice(0,14);
+                        const a = d.slice(0,4);
+                        const b = d.slice(4,10);
+                        const c = d.slice(10,13);
+                        const e = d.slice(13,14);
+                        let out = a;
+                        if (b) out += (out?'-':'') + b;
+                        if (c) out += (out?'-':'') + c;
+                        if (e) out += (out?'-':'') + e;
+                        return out;
+                    }
+                    function applyMask(){
+                        const t = ($tipo.val()||'').toUpperCase();
+                        let v = $num.val();
+                        if (t === 'DUI') {
+                            $num.attr('maxlength','10').attr('placeholder','########-#');
+                            v = fmtDUI(v);
+                        } else if (t === 'NIT') {
+                            $num.attr('maxlength','17').attr('placeholder','####-######-###-#');
+                            v = fmtNIT(v);
+                        } else {
+                            $num.removeAttr('maxlength').attr('placeholder','');
+                            v = onlyDigits(v);
+                        }
+                        $num.val(v);
+                    }
+                    $tipo.off('change.mask').on('change.mask', function(){
+                        $num.val('');
+                        applyMask();
+                    });
+                    $num.off('input.mask').on('input.mask', function(){ applyMask(); });
+                    // Aplicar al abrir
+                    applyMask();
+                })();
+                // Sin dependencias de Select2 en el modal
+                $('#modalAnularVenta').modal('show');
+            });
+
+            // Enviar anulación
+            $('#btnConfirmarAnulacion').on('click', async function(){
+                const ventaId = $('#anularVentaId').val();
+                const payload = {
+                    tipo_anulacion_id: $('#tipoAnulacionId').val(),
+                    motivo_anulacion: $('#motivoAnulacion').val(),
+                    nombre_solicita: $('#nombreSolicita').val(),
+                    tipo_doc_solicita: $('#tipoDocSolicita').val(),
+                    num_doc_solicita: $('#numDocSolicita').val()
+                };
+                try{
+                    const resp = await fetch(`/ventas/${ventaId}/anular`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (resp.ok) {
+                        $('#modalAnularVenta').modal('hide');
+                        // Refrescar la tabla/página
+                        location.reload();
+                    } else {
+                        const text = await resp.text();
+                        alert('No se pudo anular: ' + (text || resp.status));
+                    }
+                } catch(e){
+                    alert('Error de red al anular: ' + (e && e.message ? e.message : ''));
+                }
+            });
+        }
+    });
+</script>
+<!-- Modal: Anular venta -->
+<div class="modal fade" id="modalAnularVenta" tabindex="-1" role="dialog" aria-labelledby="modalAnularVentaLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalAnularVentaLabel">Anular venta</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="formAnularVenta">
+                    <input type="hidden" id="anularVentaId" name="ventaId" value="">
+                    <div class="form-group">
+                        <label for="tipoAnulacionId">Tipo de anulación</label>
+                        <select id="tipoAnulacionId" name="tipo_anulacion_id" class="form-control truncate-select">
+                            <option value="" selected disabled title="Seleccione un tipo">Seleccione un tipo</option>
+                            <option th:if="${tipoInvalidacion != null}" th:each="t : ${tipoInvalidacion}" th:value="${t.id}" th:text="${t.nombre}" th:title="${t.nombre}"></option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="motivoAnulacion">Motivo de la anulación</label>
+                        <textarea id="motivoAnulacion" name="motivo_anulacion" class="form-control" rows="3" required></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-12">
+                            <label for="nombreSolicita">Nombre quien solicita</label>
+                            <input id="nombreSolicita" name="nombre_solicita" type="text" class="form-control" required>
+                        </div>
+                        <div class="form-group col-12">
+                            <label for="tipoDocSolicita">Tipo Doc.</label>
+                            <select id="tipoDocSolicita" name="tipo_doc_solicita" class="form-control select2" required>
+                                <option value="" disabled selected>Seleccione tipo de documento</option>
+                                <option value="DUI">DUI</option>
+                                <option value="NIT">NIT</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-12">
+                            <label for="numDocSolicita">N° Doc.</label>
+                            <input id="numDocSolicita" name="num_doc_solicita" type="text" class="form-control" required>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="btnConfirmarAnulacion">Anular</button>
+            </div>
+        </div>
+    </div>
+    </div>
+</body>
+</html>

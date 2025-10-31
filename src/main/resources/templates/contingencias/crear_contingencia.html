@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments.html :: head}"></head>
+<body class="hold-transition sidebar-mini layout-fixed">
+<div class="wrapper">
+    <div th:replace="~{fragments.html :: menu}"></div>
+
+    <!-- Content Wrapper. Contains page content -->
+    <div class="content-wrapper">
+        <!-- Content Header (Page header) -->
+        <div class="content-header">
+            <div class="container-fluid">
+                <div class="row mb-2">
+                    <div class="col-sm-6">
+                        <h1 class="m-0">Crear contingencia</h1>
+                    </div><!-- /.col -->
+                    <div class="col-sm-6">
+                        <ol class="breadcrumb float-sm-right">
+                            <li class="breadcrumb-item"><a href="/home">Home</a></li>
+                            <li class="breadcrumb-item"><a href="/contingencias">Contingencias</a></li>
+                            <li class="breadcrumb-item active">Crear contingencia</li>
+                        </ol>
+                    </div><!-- /.col -->
+                </div><!-- /.row -->
+            </div><!-- /.container-fluid -->
+        </div>
+        <!-- /.content-header -->
+
+        <!-- Main content -->
+        <section class="content">
+            <div class="container-fluid">
+
+                <div class="row">
+                    <div class="col-12">
+                        <!-- Barra de acciones superior estándar -->
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="mr-auto">
+                                        <a th:href="@{/contingencias}" class="btn btn-secondary">
+                                            <i class="fas fa-arrow-left"></i> Volver
+                                        </a>
+                                    </div>
+                                    <div class="mx-auto"></div>
+                                    <div class="ml-auto"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h3 class="card-title m-0">Encabezado de contingencia</h3>
+                            </div>
+                            <div class="card-body">
+                                <form method="post" action="/contingencias/guardar" id="formContingencia">
+                                    <div class="form-row">
+                                        <div class="form-group col-12 col-md-4">
+                                            <label for="tipoContingenciaId">Tipo contingencia</label>
+                                            <select id="tipoContingenciaId" name="tipoContingenciaId" class="form-control select2" required>
+                                                <option value="" disabled selected>Seleccione un tipo</option>
+                                                <option th:each="t : ${tiposContingencia}" th:value="${t.id}" th:text="${t.nombre}"></option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group col-12 col-md-4">
+                                            <label for="fInicio">Fecha inicio</label>
+                                            <input type="date" class="form-control" id="fInicio" name="fInicio" required th:value="${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}">
+                                        </div>
+                                        <div class="form-group col-12 col-md-4">
+                                            <label for="fFin">Fecha fin</label>
+                                            <input type="date" class="form-control" id="fFin" name="fFin" required th:value="${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}">
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-group col-12">
+                                            <label for="motivoContingencia">Motivo de la contingencia</label>
+                                            <textarea id="motivoContingencia" name="motivoContingencia" class="form-control" rows="3" placeholder="Describa el motivo" required></textarea>
+                                        </div>
+                                    </div>
+
+                                </form>
+                            </div>
+                        </div>
+                        <!-- Barra de acciones inferior -->
+                        <div class="card mt-3">
+                            <div class="card-body">
+                                <div class="d-flex">
+                                    <div class="mr-auto"></div>
+                                    <div class="ml-auto d-flex align-items-center">
+                                        <a th:href="@{/contingencias}" class="btn btn-secondary mr-2"><i class="fas fa-times"></i> Cancelar</a>
+                                        <button type="submit" form="formContingencia" class="btn btn-primary"><i class="fas fa-save"></i> Guardar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- /.row -->
+
+                <!-- Ventas en contingencia -->
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h3 class="card-title m-0">Seleccionar ventas en contingencia</h3>
+                            </div>
+                            <div class="card-body">
+                                <!-- Evitar .table-responsive cuando se usa DataTables scrollX para prevenir conflictos de ancho -->
+                                <div>
+                                    <table id="tablaVentasContingencia" class="table table-bordered table-striped w-100 nowrap" style="width:100%">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 40px;">
+                                                    <input type="checkbox" id="checkAllVentas">
+                                                </th>
+                                                <th>ID Venta</th>
+                                                <th>Cliente</th>
+                                                <th>Código generación</th>
+                                                <th>Tipo documento</th>
+                                                <th>Fecha</th>
+                                                <th>Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr th:each="v : ${ventasContingencias}">
+                                                <td class="text-center align-middle">
+                                                    <input type="checkbox" class="venta-check" th:value="${v.id}">
+                                                </td>
+                                                <td th:text="${v.id}"></td>
+                                                <td th:text="${v.nombreFactura != null ? v.nombreFactura : (v.cliente != null ? v.cliente.nombreCliente : '')}"></td>
+                                                <td th:text="${v.codigoGeneracion}"></td>
+                                                <td th:text="${v.tipoDocumento != null ? v.tipoDocumento.nombre : ''}"></td>
+                                                <td th:text="${#temporals.format(v.fecha, 'dd/MM/yyyy')}"></td>
+                                                <td th:text="${#numbers.formatDecimal(v.total, 1, 'POINT', 2, 'POINT')}"></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- /.container-fluid -->
+        </section>
+        <!-- /.content -->
+    </div>
+
+
+
+    <footer th:replace="~{fragments.html :: footer}"></footer>
+</div>
+<div th:replace="~{fragments.html :: scripts}"></div>
+<script>
+    document.addEventListener('DOMContentLoaded', function(){
+        if (window.jQuery && $.fn && $.fn.select2) {
+            $('#tipoContingenciaId').select2();
+        }
+    });
+    // Validación: inicio <= fin y fin >= inicio, con mensajes claros
+    (function(){
+        const fIni = document.getElementById('fInicio');
+        const fFin = document.getElementById('fFin');
+        if (!fIni || !fFin) return;
+
+        function validateBoth(){
+            const vi = (fIni.value || '').trim();
+            const vf = (fFin.value || '').trim();
+            // Reset mensajes
+            fIni.setCustomValidity('');
+            fFin.setCustomValidity('');
+            if (vi && vf) {
+                if (vi > vf) {
+                    // inicio > fin -> error en ambos
+                    fIni.setCustomValidity('La fecha inicio no puede ser mayor que la fecha fin');
+                    fFin.setCustomValidity('La fecha fin no puede ser menor que la fecha inicio');
+                }
+            }
+        }
+
+        // Validar al cambiar valores y también al enviar
+        fIni.addEventListener('change', validateBoth);
+        fFin.addEventListener('change', validateBoth);
+        const form = document.getElementById('formContingencia');
+        if (form) {
+            form.addEventListener('submit', function(e){
+                validateBoth();
+                if (!form.checkValidity()) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+            });
+        }
+    })();
+
+    // Inicializar tabla de ventas en contingencia y manejos de selección
+    document.addEventListener('DOMContentLoaded', function(){
+        if (window.jQuery && $('#tablaVentasContingencia').length) {
+            const style = document.createElement('style');
+            style.textContent = 'table.dataTable{table-layout:auto !important;}';
+            document.head.appendChild(style);
+            const tableSel = '#tablaVentasContingencia';
+            const t = $.fn.dataTable.isDataTable(tableSel)
+                ? $(tableSel).DataTable()
+                : $(tableSel).DataTable({
+                    pageLength: 10,
+                    order: [ [1, 'desc'] ], // ordenar por ID Venta
+                    scrollX: true,
+                    autoWidth: true,
+                    language: { url: 'https://cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json' }
+                });
+            function safeAdjust(){
+                try {
+                    const container = t && t.table ? t.table().container() : null;
+                    if (container) { t.columns.adjust(); }
+                } catch (e) { /* noop */ }
+            }
+            // Ajuste diferido para asegurar que el DOM esté listo
+            setTimeout(safeAdjust, 0);
+            window.addEventListener('resize', safeAdjust);
+
+            // Select/Deselect all: operar sobre filas visibles para evitar clones y páginas no montadas
+            function toggleAllVisible(checked){
+                const api = $('#tablaVentasContingencia').DataTable();
+                api.rows({ page: 'current' }).every(function(){
+                    const node = this.node();
+                    if (node) $(node).find('input.venta-check').prop('checked', checked);
+                });
+            }
+            // Nota: thead puede ser clonado por scrollX; delegamos en document
+            $(document).on('change', '#checkAllVentas', function(){
+                toggleAllVisible(this.checked);
+            });
+            $(document).on('click', '#checkAllVentas', function(){
+                // fallback para navegadores que no disparan change inmediatamente
+                toggleAllVisible(this.checked);
+            });
+            // Al cambiar de página/redibujar, desmarcar el master
+            t.on('draw', function(){
+                $('#checkAllVentas').prop('checked', false);
+            });
+        }
+    });
+
+    // Interceptar submit para construir payload JSON y validar selección
+    (function(){
+        const form = document.getElementById('formContingencia');
+        if (!form) return;
+        form.addEventListener('submit', function(e){
+            // Ejecutar validaciones nativas
+            const fIni = document.getElementById('fInicio');
+            const fFin = document.getElementById('fFin');
+            // Re-validar rango fechas
+            if (fIni && fFin && fIni.value && fFin.value && fIni.value > fFin.value) {
+                if (fIni.setCustomValidity) fIni.setCustomValidity('La fecha inicio no puede ser mayor que la fecha fin');
+                if (fFin.setCustomValidity) fFin.setCustomValidity('La fecha fin no puede ser menor que la fecha inicio');
+            }
+
+            if (!form.checkValidity()) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+
+            // Validación: al menos una venta seleccionada
+            const seleccionadas = Array.from(document.querySelectorAll('.venta-check:checked')).map(x => x.value);
+            if (!seleccionadas.length) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (window.Swal && typeof Swal.fire === 'function') {
+                    Swal.fire({ icon: 'warning', title: 'Seleccione al menos una venta', text: 'Debe elegir una o más ventas para la contingencia.' });
+                } else {
+                    alert('Debe seleccionar al menos una venta.');
+                }
+                return;
+            }
+
+            // Construir payload JSON
+            const payload = {
+                tipoContingenciaId: document.getElementById('tipoContingenciaId')?.value || null,
+                fInicio: document.getElementById('fInicio')?.value || null,
+                fFin: document.getElementById('fFin')?.value || null,
+                motivoContingencia: document.getElementById('motivoContingencia')?.value || '',
+                ventas: seleccionadas
+            };
+
+            // Enviar al backend y redirigir a /contingencias al completar
+            e.preventDefault();
+            e.stopPropagation();
+            const btn = this.querySelector('button[type="submit"]');
+            if (btn) { btn.disabled = true; btn.innerText = 'Guardando...'; }
+            fetch('/contingencias/guardar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(async (r) => {
+                let data;
+                try { data = await r.json(); } catch (_) { data = { ok: false, message: 'Respuesta inválida del servidor' }; }
+                if (r.ok && data && data.ok) {
+                    if (window.Swal && typeof Swal.fire === 'function') {
+                        Swal.fire({ icon: 'success', title: 'Contingencia guardada', text: data.message || 'Operación exitosa' })
+                            .then(() => { window.location.href = '/contingencias'; });
+                    } else {
+                        window.location.href = '/contingencias';
+                    }
+                } else {
+                    const msg = (data && data.message) ? data.message : 'Error al guardar la contingencia';
+                    if (window.Swal && typeof Swal.fire === 'function') {
+                        Swal.fire({ icon: 'error', title: 'Error', text: msg });
+                    } else {
+                        alert(msg);
+                    }
+                }
+            })
+            .catch((err) => {
+                const msg = 'Error de red o servidor. ' + (err && err.message ? err.message : '');
+                if (window.Swal && typeof Swal.fire === 'function') {
+                    Swal.fire({ icon: 'error', title: 'Error', text: msg });
+                } else {
+                    alert(msg);
+                }
+            })
+            .finally(() => {
+                if (btn) { btn.disabled = false; btn.innerText = 'Guardar'; }
+            });
+        });
+    })();
+</script>
+</body>
+</html>

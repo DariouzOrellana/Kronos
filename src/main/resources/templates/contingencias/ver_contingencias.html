@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments.html :: head}"></head>
+<body class="hold-transition sidebar-mini layout-fixed">
+<div class="wrapper">
+    <div th:replace="~{fragments.html :: menu}"></div>
+
+    <!-- Content Wrapper. Contains page content -->
+    <div class="content-wrapper">
+        <!-- Content Header (Page header) -->
+        <div class="content-header">
+            <div class="container-fluid">
+                <div class="row mb-2">
+                    <div class="col-sm-6">
+                        <h1 class="m-0">Contingencias</h1>
+                    </div><!-- /.col -->
+                    <div class="col-sm-6">
+                        <ol class="breadcrumb float-sm-right">
+                            <li class="breadcrumb-item"><a href="/home">Home</a></li>
+                            <li class="breadcrumb-item active">Contingencias</li>
+                        </ol>
+                    </div><!-- /.col -->
+                </div><!-- /.row -->
+            </div><!-- /.container-fluid -->
+        </div>
+        <!-- /.content-header -->
+
+        <!-- Main content -->
+        <section class="content">
+            <div class="container-fluid">
+
+                <div class="row">
+                    <div class="col-12">
+                        <!-- Barra de acciones superior estándar -->
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="mr-auto"></div>
+                                    <div class="mx-auto">
+                                        <a th:href="@{/contingencias/crear}" class="btn btn-primary">
+                                            <i class="fas fa-plus"></i> Nueva contingencia
+                                        </a>
+                                    </div>
+                                    <div class="ml-auto"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h3 class="card-title m-0">Listado de contingencias</h3>
+                            </div>
+                            <div class="card-body">
+                                <!-- Evitar .table-responsive cuando se usa DataTables con scrollX -->
+                                <div>
+                                    <table id="tablaContingencias" class="table table-bordered table-striped w-100 nowrap" style="width:100%">
+                                        <thead>
+                                            <tr>
+                                                <th>Acciones</th>
+                                                <th>Estado</th>
+                                                <th>ID</th>
+                                                <th>Código generación</th>
+                                                <th>Sello contingencia</th>
+                                                <th>F. inicio</th>
+                                                <th>F. fin</th>
+                                                <th>Tipo contingencia</th>
+                                                <th>Motivo</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr th:each="c : ${contingencias}">
+                                                <td class="text-nowrap">
+                                                    <a th:if="${c.selloContingencia == null or #strings.isEmpty(c.selloContingencia)}"
+                                                       th:href="@{|/contingencias/${c.id}/enviar|}"
+                                                       class="btn btn-warning btn-sm mr-1" title="Enviar">
+                                                        <i class="fas fa-paper-plane"></i>
+                                                    </a>
+                                                    <a th:href="@{|/contingencias/${c.id}|}"
+                                                       class="btn btn-secondary btn-sm" title="Ingresar">
+                                                        <i class="fas fa-external-link-alt"></i>
+                                                    </a>
+                                                </td>
+                                                <td>
+                                                    <span th:classappend="${(c.selloContingencia == null or #strings.isEmpty(c.selloContingencia))} ? 'badge badge-secondary' : 'badge badge-success'"
+                                                          th:text="${(c.selloContingencia == null or #strings.isEmpty(c.selloContingencia)) ? 'Pendiente' : 'Procesada'}"></span>
+                                                </td>
+                                                <td th:text="${c.id}"></td>
+                                                <td th:text="${c.codigoGeneracion}"></td>
+                                                <td th:text="${c.selloContingencia}"></td>
+                                                <td th:text="${#temporals.format(c.fInicio, 'dd/MM/yyyy')}"></td>
+                                                <td th:text="${#temporals.format(c.fFin, 'dd/MM/yyyy')}"></td>
+                                                <td th:text="${c.tipoContingencia != null ? c.tipoContingencia.nombre : ''}"></td>
+                                                <td th:text="${c.motivoContingencia}"></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- /.row -->
+
+            </div><!-- /.container-fluid -->
+        </section>
+        <!-- /.content -->
+    </div>
+
+    <footer th:replace="~{fragments.html :: footer}"></footer>
+</div>
+<div th:replace="~{fragments.html :: scripts}"></div>
+<script>
+    document.addEventListener('DOMContentLoaded', function(){
+        if (window.jQuery && $('#tablaContingencias').length) {
+            const style = document.createElement('style');
+            style.textContent = 'table.dataTable{table-layout:auto !important;}';
+            document.head.appendChild(style);
+
+            const sel = '#tablaContingencias';
+            const table = $.fn.dataTable.isDataTable(sel)
+                ? $(sel).DataTable()
+                : $(sel).DataTable({
+                    pageLength: 10,
+                    order: [ [2, 'desc'] ],
+                    scrollX: true,
+                    autoWidth: true,
+                    language: { url: 'https://cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json' }
+                });
+
+            function safeAdjust(){
+                try {
+                    const container = table && table.table ? table.table().container() : null;
+                    if (container) { table.columns.adjust(); }
+                } catch (e) { /* noop */ }
+            }
+            setTimeout(safeAdjust, 0);
+            window.addEventListener('resize', safeAdjust);
+        }
+    });
+</script>
+</body>
+</html>

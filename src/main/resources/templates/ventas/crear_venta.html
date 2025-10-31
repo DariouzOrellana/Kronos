@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments.html :: head}"></head>
+<body class="hold-transition sidebar-mini layout-fixed">
+<div class="wrapper">
+    <div th:replace="~{fragments.html :: menu}"></div>
+    <style>
+        /* Asegurar ancho completo como los form-control */
+        .select2-container { width: 100% !important; }
+        .select2-container { box-sizing: border-box; }
+        /* Evitar scroll horizontal cuando se abre el dropdown */
+        .content-wrapper { overflow-x: hidden; }
+        .select2-dropdown { overflow-x: hidden; box-sizing: border-box; max-width: 100% !important; }
+        /* Forzar que el dropdown no sea más ancho que el control */
+        .select2-dropdown.select2-dropdown-fixed { min-width: 100% !important; width: 100% !important; max-width: 100% !important; }
+        .select2-container { max-width: 100%; }
+        /* Evitar que textos largos expandan el ancho */
+        .select2-results, .select2-results__options { max-width: 100%; }
+        .select2-results__option { white-space: normal; word-break: break-word; overflow-wrap: anywhere; }
+        /* Estilos de énfasis para totales */
+        .total-amount { font-weight: 600; font-size: 1.05rem; background-color: #f8f9fa; }
+        .totales-card .card-body .form-group label { font-weight: 600; }
+    </style>
+
+    <!-- Content Wrapper. Contains page content -->
+    <div class="content-wrapper">
+        <!-- Content Header (Page header) -->
+        <div class="content-header">
+            <div class="container-fluid">
+                <div class="row mb-2">
+                    <div class="col-sm-6">
+                        <h1 class="m-0">Crear Venta</h1>
+                    </div><!-- /.col -->
+                    <div class="col-sm-6">
+                        <ol class="breadcrumb float-sm-right">
+                            <li class="breadcrumb-item"><a href="/home">Home</a></li>
+                            <li class="breadcrumb-item"><a href="/ventas">Ventas</a></li>
+                            <li class="breadcrumb-item active">Crear Venta</li>
+                        </ol>
+                    </div><!-- /.col -->
+                </div><!-- /.row -->
+            </div><!-- /.container-fluid -->
+        </div>
+        <!-- /.content-header -->
+
+        <!-- Main content -->
+        <section class="content">
+            <div class="container-fluid">
+
+                <div class="row">
+                    <div class="col-12">
+                        <!-- Barra de acciones superior estándar -->
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="mr-auto">
+                                        <a th:href="@{/ventas}" class="btn btn-secondary">
+                                            <i class="fas fa-arrow-left"></i> Volver
+                                        </a>
+                                    </div>
+                                    <div class="mx-auto"></div>
+                                    <div class="ml-auto"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h3 class="card-title m-0">Nueva Venta</h3>
+                            </div>
+                            <div class="card-body">
+                                <form id="formVenta" method="post">
+                                    <div class="form-row">
+                                        <div class="form-group col-12 col-md-6">
+                                            <label class="d-block">Tipo de documento</label>
+                                            <div class="form-control" style="height: auto;">
+                                                <div class="custom-control custom-radio d-inline-block mr-3" th:each="t,iter : ${tiposDocumento}">
+                                                    <input class="custom-control-input" type="radio" th:id="${'tipoDocumento_' + t.id}" name="tipoDocumentoId" th:value="${t.id}" th:checked="${iter.index == 0}" th:attr="data-nombre=${t.nombre}">
+                                                    <label class="custom-control-label" th:for="${'tipoDocumento_' + t.id}" th:text="${t.nombre}"></label>
+                                                </div>
+                                            </div>
+                                            <div class="invalid-feedback d-block">Seleccione un tipo de documento.</div>
+                                        </div>
+                                        <div class="form-group col-12 col-md-6">
+                                            <label for="cliente">Cliente</label>
+                                            <select id="cliente" class="form-control select2" name="cliente">
+                                                <option value="" selected>Seleccione un cliente</option>
+                                                <option th:each="c : ${clientes}"
+                                                        th:value="${c.id}"
+                                                        th:text="${c.nombreCliente}"
+                                                        th:attr="data-nombre=${c.nombreCliente},data-nrc=${c.noRegistro},data-nit=${c.nit},data-dui=${c.dui},data-tipo-contr-id=${c.tipoContribuyente != null ? c.tipoContribuyente.id : ''},data-correo=${c.correo}"></option>
+                                            </select>
+                                            <div class="invalid-feedback">Seleccione un cliente.</div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Datos de facturación del cliente -->
+                                    <div class="form-row">
+                                        <div class="form-group col-12 col-md-4">
+                                            <label for="nombreFactura">Nombre en factura</label>
+                                            <input type="text" class="form-control" id="nombreFactura" name="nombre_factura" placeholder="Nombre para la factura" value="CONSUMIDOR FINAL" th:value="${defaultNombreFactura != null && !#strings.isEmpty(defaultNombreFactura) ? defaultNombreFactura : 'CONSUMIDOR FINAL'}">
+                                        </div>
+                                        <div class="form-group col-12 col-md-4">
+                                            <label for="tipoDocFactura">Tipo Doc.</label>
+                                            <select id="tipoDocFactura" class="form-control select2" name="tipo_doc_factura">
+                                                <option value="" disabled selected>Seleccione tipo</option>
+                                                <option value="NRC">NRC</option>
+                                                <option value="DUI">DUI</option>
+                                                <option value="NIT">NIT</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group col-12 col-md-4">
+                                            <label for="docFactura">Documento factura</label>
+                                            <input type="text" class="form-control" id="docFactura" name="doc_factura" placeholder="Número de documento">
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group col-12 col-md-6">
+                                            <label for="correoFactura">Correo</label>
+                                            <input type="email" class="form-control" id="correoFactura" name="correo" placeholder="correo@dominio.com">
+                                            <div class="invalid-feedback">Ingrese un correo válido.</div>
+                                        </div>
+                                    </div>
+                                    <!-- Sección de productos/servicios -->
+                                    <div class="form-row align-items-end">
+                                        <div class="form-group col-5">
+                                            <label for="productoServicio">Seleccione producto/servicio</label>
+                                            <select id="productoServicio" class="form-control select2" name="productoServicio">
+                                                <option value="" disabled selected>Seleccione un item</option>
+                                                <option th:each="p : ${productos}" th:value="${p.id}" th:text="${p.descripcion}" th:data-precio="${p.precio}"></option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group col-3">
+                                            <label for="productoPrecio">Precio</label>
+                                            <div class="input-group">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text"><i class="fas fa-dollar-sign"></i></span>
+                                                </div>
+                                                <input type="text" id="productoPrecio" class="form-control decimal-dot select-on-focus" inputmode="decimal" pattern="^[0-9]*\.?[0-9]*$" min="0" value="0.00">
+                                            </div>
+                                        </div>
+                                        <div class="form-group col-2">
+                                            <label for="cantidadAgregar">Cantidad</label>
+                                            <input type="text" id="cantidadAgregar" class="form-control decimal-dot select-on-focus" inputmode="decimal" pattern="^[0-9]*\.?[0-9]*$" min="0" value="1">
+                                        </div>
+                                        <div class="form-group col-2 d-flex">
+                                            <button type="button" class="btn btn-outline-primary ml-auto" id="btnAgregarItem">Agregar ítem</button>
+                                        </div>
+                                        <div class="form-group col-12">
+                                            <label>Detalle</label>
+                                            <div class="table-responsive">
+                                                <table class="table table-bordered" id="tablaItems">
+                                                    <thead>
+                                                    <tr>
+                                                        <th style="width: 40%">Descripción</th>
+                                                        <th style="width: 15%">Cantidad</th>
+                                                        <th style="width: 20%">Precio Unitario</th>
+                                                        <th style="width: 20%">Total</th>
+                                                        <th style="width: 5%"></th>
+                                                    </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Totales en card alineada a la derecha -->
+                                    <div class="form-row mt-3 totales-card">
+                                        <div class="col-12 d-flex justify-content-end">
+                                            <div class="card" style="min-width: 320px; max-width: 420px;">
+                                                <div class="card-body">
+                                                    <div class="form-group mb-2">
+                                                        <label for="subtotal" class="mb-1">Subtotal</label>
+                                                        <div class="input-group">
+                                                            <div class="input-group-prepend">
+                                                                <span class="input-group-text"><i class="fas fa-dollar-sign"></i></span>
+                                                            </div>
+                                                            <input id="subtotal" type="text" inputmode="decimal" pattern="^[0-9]*\.?[0-9]*$" class="form-control monto text-right decimal-dot total-amount" value="0.00" required readonly>
+                                                        </div>
+                                                        <div class="invalid-feedback">Subtotal requerido y no negativo.</div>
+                                                    </div>
+                                                    <div class="form-group mb-2">
+                                                        <label for="iva" class="mb-1">IVA</label>
+                                                        <div class="input-group">
+                                                            <div class="input-group-prepend">
+                                                                <span class="input-group-text"><i class="fas fa-dollar-sign"></i></span>
+                                                            </div>
+                                                            <input id="iva" type="text" inputmode="decimal" pattern="^[0-9]*\.?[0-9]*$" class="form-control monto text-right decimal-dot total-amount" value="0.00" readonly>
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-group mb-2">
+                                                        <label for="retencion" class="mb-1">Retención</label>
+                                                        <div class="input-group">
+                                                            <div class="input-group-prepend">
+                                                                <span class="input-group-text"><i class="fas fa-dollar-sign"></i></span>
+                                                            </div>
+                                                            <input id="retencion" type="text" inputmode="decimal" pattern="^[0-9]*\.?[0-9]*$" class="form-control monto text-right decimal-dot total-amount" value="0.00" disabled>
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-group mb-0">
+                                                        <label for="total" class="mb-1">Total</label>
+                                                        <div class="input-group">
+                                                            <div class="input-group-prepend">
+                                                                <span class="input-group-text"><i class="fas fa-dollar-sign"></i></span>
+                                                            </div>
+                                                            <input id="total" type="text" inputmode="decimal" pattern="^[0-9]*\.?[0-9]*$" class="form-control text-right decimal-dot total-amount" value="0.00" required readonly>
+                                                        </div>
+                                                        <div class="invalid-feedback">Total requerido.</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </form>
+                            </div>
+                        </div>
+                        <!-- Barra de acciones inferior -->
+                        <div class="card mt-3">
+                            <div class="card-body">
+                                <div class="d-flex">
+                                    <div class="mr-auto"></div>
+                                    <div class="ml-auto d-flex align-items-center">
+                                        <a href="/ventas" class="btn btn-secondary mr-2"><i class="fas fa-times"></i> Cancelar</a>
+                                        <button type="submit" form="formVenta" class="btn btn-primary" id="btnGuardar"><i class="fas fa-save"></i> Guardar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- /.row -->
+
+            </div><!-- /.container-fluid -->
+        </section>
+        <!-- /.content -->
+    </div>
+
+
+
+    <footer th:replace="~{fragments.html :: footer}"></footer>
+</div>
+<div th:replace="~{fragments.html :: scripts}"></div>
+<script th:inline="javascript">
+    // Valores desde el controlador
+    const valorIva = /*[[${valorIva}]]*/ 0; // Ej: 0.13
+    const valorRetencion = /*[[${valorRetencion}]]*/ 0;
+    const montoRetencion = /*[[${montoRetencion}]]*/ 0;
+    const empresaTipoContribuyente = /*[[${empresaTipoContribuyente}]]*/ '1';
+    // Helpers numéricos
+    function toNum(n){
+        if (n === null || n === undefined) return 0;
+        const s = String(n).replace(',', '.');
+        const v = parseFloat(s);
+        return isNaN(v) ? 0 : v;
+    }
+    function toMoney(n){
+        const v = toNum(n);
+        return v.toFixed(2);
+    }
+    function round2(n){ return Math.round((toNum(n)) * 100) / 100; }
+</script>
+<script>
+
+    // Auto-calc total: usando IVA del controlador
+    function calcTotal() {
+        const val = id => toNum(document.getElementById(id)?.value || '0');
+        const subtotal = val('subtotal');
+        // Determinar la tasa de IVA en fracción (p.ej. 0.13). Si viene como porcentaje (13), convertir.
+        const rawIva = toNum(typeof valorIva !== 'undefined' ? valorIva : 0);
+        const ivaRate = rawIva > 1 ? rawIva / 100 : rawIva;
+        // Calcular IVA a partir del subtotal (fallback cuando no hay total bruto)
+        const ivaCalc = round2(subtotal * ivaRate);
+        const ivaEl = document.getElementById('iva');
+        if (ivaEl) {
+            ivaEl.value = toMoney(ivaCalc);
+            ivaEl.readOnly = true;
+        }
+        // Total = subtotal + iva (ignorar retención por ahora)
+        let total = round2(subtotal + ivaCalc);
+        const totalEl = document.getElementById('total');
+        if (totalEl) totalEl.value = toMoney(total);
+
+        // Aplicar retención según reglas, ajustando campo y total
+        applyRetencionIfNeeded();
+    }
+    ['subtotal','descuento','iva','retencion','percepcion'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', calcTotal);
+    });
+    // Initialize total on load
+    document.addEventListener('DOMContentLoaded', calcTotal);
+
+    // Aplicar estilo "disabled" consistente a totales (solo lectura + estilos)
+    function styleTotalsReadonly(){
+        const ids = ['subtotal','iva','retencion','percepcion','total'];
+        ids.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.readOnly = true;
+                el.classList.add('bg-light','text-muted');
+            }
+        });
+    }
+
+    // Items logic
+    function recalcItemsSubtotal() {
+        const tbody = document.querySelector('#tablaItems tbody');
+        let gross = 0; // total con IVA (suma de filas)
+        if (tbody) {
+            tbody.querySelectorAll('tr').forEach(tr => {
+                const qty = toNum(tr.querySelector('.item-cantidad')?.value || '0');
+                const price = toNum(tr.querySelector('.item-precio')?.value || '0');
+                const rowTotal = round2(qty * price);
+                const totalEl = tr.querySelector('.item-total');
+                if (totalEl) totalEl.value = toMoney(rowTotal);
+                gross += rowTotal;
+            });
+        }
+        const subtotalEl = document.getElementById('subtotal');
+        // tasa IVA normalizada
+        const rawIva = toNum(typeof valorIva !== 'undefined' ? valorIva : 0);
+        const ivaRate = rawIva > 1 ? rawIva / 100 : rawIva;
+        const derivedSubtotal = (1 + ivaRate) > 0 ? (gross / (1 + ivaRate)) : gross;
+        const subtotalRounded = round2(derivedSubtotal);
+        if (subtotalEl) subtotalEl.value = toMoney(subtotalRounded);
+        // Reconciliar IVA como diferencia: iva = gross - subtotal
+        const ivaVal = round2(gross - subtotalRounded);
+        const ivaOut = document.getElementById('iva');
+        if (ivaOut) ivaOut.value = toMoney(ivaVal);
+        // Total mostrado es el bruto sumado de filas
+        const totalOut = document.getElementById('total');
+        if (totalOut) totalOut.value = toMoney(round2(gross));
+
+        // Retención después de recalcular bruto/subtotal/iva
+        applyRetencionIfNeeded();
+    }
+
+    function getSelectedClienteTipoContrId(){
+        const sel = document.getElementById('cliente');
+        if (!sel || !sel.value) return null;
+        const opt = sel.options[sel.selectedIndex];
+        const v = opt ? (opt.getAttribute('data-tipo-contr-id') || '').trim() : '';
+        return v ? parseInt(v, 10) : null;
+    }
+
+    function getTipoDocumentoGeneralNombre(){
+        const checked = document.querySelector('input[name="tipoDocumentoId"]:checked');
+        return checked ? (checked.getAttribute('data-nombre') || '') : '';
+    }
+
+    function toRate(x){ const n = toNum(x); return n > 1 ? n/100 : n; }
+
+    function applyRetencionIfNeeded(){
+        const tipoNombreRaw = (getTipoDocumentoGeneralNombre() || '');
+        const tipoNombre = (typeof normalizeStr === 'function') ? normalizeStr(tipoNombreRaw) : tipoNombreRaw.toLowerCase();
+        const clienteTipoId = getSelectedClienteTipoContrId();
+        const empresaTipo = parseInt(empresaTipoContribuyente || '1', 10);
+        const retIn = document.getElementById('retencion');
+        const totalEl = document.getElementById('total');
+        const subtotalEl = document.getElementById('subtotal');
+        if (!retIn || !totalEl) return;
+
+        // Reset por defecto
+        retIn.disabled = false;
+        let total = toNum(totalEl.value || '0');
+        const subtotalVal = subtotalEl ? toNum(subtotalEl.value || '0') : 0;
+
+        // Solo aplica para crédito fiscal
+        if (tipoNombre.includes('credito')) {
+            // Si no hay cliente o tipo de contribuyente de cliente, no aplicar
+            if (clienteTipoId == null || isNaN(clienteTipoId)) {
+                console.debug('[RET] No cliente o tipoContribuyenteId inválido', { clienteTipoId, empresaTipo, tipoNombre });
+                retIn.value = toMoney(0);
+                return;
+            }
+            // Si cliente.tipoContribuyenteId es mayor que el de la empresa => aplica retención
+            if (clienteTipoId > empresaTipo) {
+                const minBase = toNum(montoRetencion);
+                const rate = toRate(valorRetencion);
+                console.debug('[RET] Evaluando retención', { subtotalVal, minBase, rate, totalAntes: total });
+                if (subtotalVal > minBase && rate > 0) {
+                    const ret = round2(total * rate);
+                    retIn.value = toMoney(ret);
+                    total = round2(total - ret);
+                    totalEl.value = toMoney(total);
+                    console.debug('[RET] Aplicada retención', { ret, totalDespues: total });
+                    return;
+                }
+                console.debug('[RET] No aplica por umbral/tasa', { subtotalVal, minBase, rate });
+            }
+            console.debug('[RET] Cliente no mayor que empresa', { clienteTipoId, empresaTipo });
+        }
+        // Si no aplica, retención 0
+        retIn.value = toMoney(0);
+    }
+
+    function addItemRowWithValues(descripcion, cantidad, precio, productoId) {
+        const tbody = document.querySelector('#tablaItems tbody');
+        if (!tbody) return;
+        const tr = document.createElement('tr');
+        const safeDesc = descripcion || '';
+        const qty = (typeof cantidad === 'number' && !isNaN(cantidad)) ? cantidad : 1;
+        const price = (typeof precio === 'number' && !isNaN(precio)) ? precio : 0;
+        const rowTotal = qty * price;
+        tr.dataset.productId = productoId || '';
+        tr.innerHTML = `
+            <td>
+                <input type="hidden" class="item-id" value="${productoId || ''}">
+                <input type="text" class="form-control item-descripcion" placeholder="Descripción" value="${safeDesc}">
+            </td>
+            <td><input type="text" class="form-control item-cantidad decimal-dot select-on-focus" inputmode="decimal" pattern="^[0-9]*\\.?[0-9]*$" min="0" value="${qty.toFixed(2)}"></td>
+            <td>
+                <div class="input-group">
+                    <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-dollar-sign"></i></span></div>
+                    <input type="text" class="form-control item-precio decimal-dot select-on-focus" inputmode="decimal" pattern="^[0-9]*\\.?[0-9]*$" min="0" value="${price.toFixed(2)}">
+                </div>
+            </td>
+            <td>
+                <div class="input-group">
+                    <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-dollar-sign"></i></span></div>
+                    <input type="text" class="form-control item-total decimal-dot" inputmode="decimal" pattern="^[0-9]*\\.?[0-9]*$" min="0" value="${rowTotal.toFixed(2)}" readonly>
+                </div>
+            </td>
+            <td><button type="button" class="btn btn-danger btn-sm item-remove">&times;</button></td>
+        `;
+        tbody.appendChild(tr);
+        tr.querySelector('.item-cantidad').addEventListener('input', recalcItemsSubtotal);
+        tr.querySelector('.item-precio').addEventListener('input', recalcItemsSubtotal);
+        tr.querySelector('.item-remove').addEventListener('click', function() {
+            tr.remove();
+            recalcItemsSubtotal();
+        });
+        recalcItemsSubtotal();
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const btnAdd = document.getElementById('btnAgregarItem');
+        if (btnAdd) btnAdd.addEventListener('click', function() {
+            const select = document.getElementById('productoServicio');
+            const qtyInput = document.getElementById('cantidadAgregar');
+            const priceInput = document.getElementById('productoPrecio');
+            if (!select || !qtyInput) return;
+            const opt = select.options[select.selectedIndex];
+            if (!opt || !opt.value) return;
+            const descripcion = opt.text;
+            const precioAttr = opt.getAttribute('data-precio');
+            const precio = toNum((priceInput && priceInput.value) ? priceInput.value : (precioAttr || '0'));
+            const cantidad = toNum(qtyInput.value || '0');
+            if (cantidad <= 0) return;
+            addItemRowWithValues(descripcion, cantidad, precio, opt.value);
+        });
+
+        // Al cambiar el producto, actualizar y guardar el precio sugerido
+        const selectProducto = document.getElementById('productoServicio');
+        const inputProductoPrecio = document.getElementById('productoPrecio');
+        if (selectProducto && inputProductoPrecio) {
+            const applyPriceFromOption = (opt) => {
+                if (!opt) return;
+                const precioAttr = opt.getAttribute('data-precio');
+                const p = toNum(precioAttr || '0');
+                // Guardar precio seleccionado en data- del select
+                selectProducto.dataset.selectedPrecio = p.toFixed(2);
+                // Setear el input de precio
+                inputProductoPrecio.value = p.toFixed(2);
+            };
+
+            // Cambio en el select nativo (también se dispara con Select2)
+            selectProducto.addEventListener('change', function() {
+                const opt = this.options[this.selectedIndex];
+                applyPriceFromOption(opt);
+            });
+
+            // Evento específico de Select2 por si hiciera falta
+            if (window.jQuery && $.fn && $.fn.select2) {
+                $(selectProducto).on('select2:select', function(e){
+                    const opt = e.params && e.params.data && e.params.data.element ? e.params.data.element : null;
+                    applyPriceFromOption(opt);
+                });
+            }
+
+            // Inicializar si hay un producto preseleccionado
+            const initialOpt = selectProducto.options[selectProducto.selectedIndex];
+            if (initialOpt && initialOpt.value) {
+                applyPriceFromOption(initialOpt);
+            }
+        }
+
+        // Helpers de validación por tipo de documento general (radios)
+        function normalizeStr(s){
+            return (s || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+        }
+        function getTipoDocumentoGeneral(){
+            const checked = document.querySelector('input[name="tipoDocumentoId"]:checked');
+            return {
+                id: checked ? checked.value : null,
+                nombre: checked ? (checked.getAttribute('data-nombre') || '') : ''
+            };
+        }
+        function validateBeforeSubmit(){
+            // Recalcular totales por si hay cambios pendientes
+            recalcItemsSubtotal();
+            const tipo = getTipoDocumentoGeneral();
+            const tipoNombreNorm = normalizeStr(tipo.nombre);
+            const nombreFacturaEl = document.getElementById('nombreFactura');
+            const clienteSel = document.getElementById('cliente');
+            const totalVal = toNum(document.getElementById('total')?.value || '0');
+
+            // Si es factura: nombre de factura no debe ir vacío
+            if (tipoNombreNorm.includes('factura')) {
+                if (!nombreFacturaEl || !nombreFacturaEl.value || !nombreFacturaEl.value.trim()) {
+                    if (window.Swal && typeof Swal.fire === 'function') {
+                        Swal.fire({ icon: 'warning', title: 'Nombre de factura requerido', text: 'Para Factura, el campo "Nombre en factura" no puede estar vacío.' });
+                    } else {
+                        alert('Para Factura, el Nombre en factura no puede estar vacío.');
+                    }
+                    return false;
+                }
+            }
+
+            // Si es crédito fiscal o nota de crédito: debe haber cliente seleccionado
+            if (tipoNombreNorm.includes('credito')) {
+                if (!clienteSel || !clienteSel.value) {
+                    if (window.Swal && typeof Swal.fire === 'function') {
+                        Swal.fire({ icon: 'warning', title: 'Seleccione un cliente', text: 'Para Crédito Fiscal o Nota de Crédito debe seleccionar un cliente.' });
+                    } else {
+                        alert('Para Crédito Fiscal o Nota de Crédito debe seleccionar un cliente.');
+                    }
+                    return false;
+                }
+            }
+
+            // Total debe ser mayor a 0
+            if (!(totalVal > 0)) {
+                if (window.Swal && typeof Swal.fire === 'function') {
+                    Swal.fire({ icon: 'warning', title: 'Total inválido', text: 'El total de la venta debe ser mayor a 0.' });
+                } else {
+                    alert('El total de la venta debe ser mayor a 0.');
+                }
+                return false;
+            }
+
+            return true;
+        }
+
+        const form = document.getElementById('formVenta');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                if (!validateBeforeSubmit()) return;
+                submitVenta();
+            });
+        }
+
+        // Construcción del payload reutilizable
+        function buildVentaPayload() {
+            // Recalcular por si hay cambios
+            recalcItemsSubtotal();
+
+            // Construir items
+            const items = [];
+            const tbody = document.querySelector('#tablaItems tbody');
+            if (tbody) {
+                tbody.querySelectorAll('tr').forEach(tr => {
+                    items.push({
+                        id: tr.querySelector('.item-id')?.value || tr.dataset.productId || null,
+                        descripcion: tr.querySelector('.item-descripcion')?.value || '',
+                        cantidad: toNum(tr.querySelector('.item-cantidad')?.value || '0'),
+                        precioUnitario: toNum(tr.querySelector('.item-precio')?.value || '0'),
+                        total: toNum(tr.querySelector('.item-total')?.value || '0')
+                    });
+                });
+            }
+
+            return {
+                clienteId: document.getElementById('cliente')?.value || null,
+                tipoDocumentoId: (document.querySelector('input[name="tipoDocumentoId"]:checked')?.value) || null,
+                productoServicioId: document.getElementById('productoServicio')?.value || null,
+                nombre_factura: document.getElementById('nombreFactura')?.value || '',
+                tipo_doc_factura: document.getElementById('tipoDocFactura')?.value || '',
+                doc_factura: document.getElementById('docFactura')?.value || '',
+                correo: document.getElementById('correoFactura')?.value || '',
+                montos: {
+                    subtotal: toNum(document.getElementById('subtotal')?.value || '0'),
+                    iva: toNum(document.getElementById('iva')?.value || '0'),
+                    descuento: toNum(document.getElementById('descuento')?.value || '0'),
+                    retencion: toNum(document.getElementById('retencion')?.value || '0'),
+                    percepcion: toNum(document.getElementById('percepcion')?.value || '0'),
+                    total: toNum(document.getElementById('total')?.value || '0')
+                },
+                items: items
+            };
+        }
+
+        // Log auxiliar
+        function logVentaPayload() {
+            const payload = buildVentaPayload();
+            console.log('JSON Venta:', JSON.stringify(payload, null, 2));
+            return payload;
+        }
+
+        // Enviar por AJAX al backend y manejar ok/message
+        async function enviarVenta(payload) {
+            try {
+                const resp = await fetch('/ventas/guardar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await resp.json().catch(() => ({ ok: false, message: 'Respuesta inválida del servidor' }));
+                const isOk = !!(data && data.ok);
+                const msg = (data && data.message) ? data.message : (isOk ? 'Operación exitosa' : 'Ocurrió un error');
+                if (window.Swal && typeof Swal.fire === 'function') {
+                    await Swal.fire({ icon: isOk ? 'success' : 'error', title: msg });
+                } else {
+                    alert(msg);
+                }
+                return isOk;
+            } catch (err) {
+                console.error('Error enviando venta', err);
+                if (window.Swal && typeof Swal.fire === 'function') {
+                    await Swal.fire({ icon: 'error', title: 'Error de red', text: 'No se pudo comunicar con el servidor.' });
+                } else {
+                    alert('Error de red: no se pudo comunicar con el servidor.');
+                }
+                return false;
+            }
+        }
+
+        async function submitVenta(){
+            const btn = document.getElementById('btnGuardar');
+            if (btn) btn.disabled = true;
+            const payload = buildVentaPayload();
+            // Log opcional
+            console.log('Enviando venta...', payload);
+            const ok = await enviarVenta(payload);
+            if (btn) btn.disabled = false;
+            // Aquí podrías redirigir si fue ok, p.ej. a /ventas
+            // if (ok) window.location.href = '/ventas';
+        }
+
+        const btnProcesar = document.getElementById('btnProcesarVenta');
+        if (btnProcesar) {
+            btnProcesar.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (!validateBeforeSubmit()) return;
+                logVentaPayload();
+            });
+        }
+
+        function setDefaultNombreFactura(){
+            const nf = document.getElementById('nombreFactura');
+            if (nf && (!nf.value || !nf.value.trim())) {
+                nf.value = 'CONSUMIDOR FINAL';
+            }
+        }
+        // Ejecutar inmediatamente por si el DOM ya está listo
+        setDefaultNombreFactura();
+        // Y también en DOMContentLoaded (para navegadores con bfcache o carga diferida)
+        document.addEventListener('DOMContentLoaded', setDefaultNombreFactura);
+
+        // Forzar separador decimal con punto en campos marcados
+        document.addEventListener('input', function(ev){
+            const el = ev.target;
+            if (el && el.classList && el.classList.contains('decimal-dot')) {
+                const start = el.selectionStart, end = el.selectionEnd;
+                el.value = el.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
+                // Restaurar posición del cursor si es posible
+                if (typeof start === 'number' && typeof end === 'number') {
+                    try { el.setSelectionRange(start, end); } catch (_) {}
+                }
+            }
+        });
+
+        // Inicializar Select2 si está disponible
+        if (window.jQuery && $.fn && $.fn.select2) {
+            const placeholders = {
+                cliente: 'Seleccione un cliente',
+                productoServicio: 'Seleccione un item',
+                tipoDocFactura: 'Seleccione tipo'
+            };
+            ['#cliente', '#productoServicio', '#tipoDocFactura'].forEach(sel => {
+                const $el = $(sel);
+                if ($el.length) {
+                    const id = $el.attr('id');
+                    const $parent = $el.closest('.form-group');
+                    const opts = {
+                        width: '100%',
+                        placeholder: placeholders[id] || 'Seleccione...',
+                        dropdownAutoWidth: false,
+                        dropdownCssClass: 'select2-dropdown-fixed',
+                        dropdownParent: $parent.length ? $parent : $('#formVenta')
+                    };
+                    if (id === 'cliente') { opts.allowClear = true; }
+                    $el.select2(opts);
+                }
+            });
+
+            // Manejar limpiar del cliente en Select2
+            const $cliente = $('#cliente');
+            if ($cliente.length) {
+                $cliente.on('select2:clear', function(){
+                    // Reset dependencias al deseleccionar cliente
+                    const nombreInput = document.getElementById('nombreFactura');
+                    const tipoDocSel = document.getElementById('tipoDocFactura');
+                    const docFacturaInput = document.getElementById('docFactura');
+                    const btnGuardar = document.getElementById('btnGuardar');
+                    if (nombreInput) { nombreInput.value = ''; nombreInput.dataset.fixed = 'false'; }
+                    if (tipoDocSel) {
+                        tipoDocSel.value = '';
+                        if ($.fn && $.fn.select2) { $(tipoDocSel).val(null).trigger('change'); }
+                    }
+                    if (docFacturaInput) { docFacturaInput.value = ''; docFacturaInput.classList.remove('is-valid','is-invalid'); }
+                    const correoEl = document.getElementById('correoFactura');
+                    if (correoEl) { correoEl.value = ''; correoEl.classList.remove('is-valid','is-invalid'); }
+                    // Ya no deshabilitamos Guardar al limpiar
+                });
+            }
+        } else {
+            console.warn('Select2 no está cargado. Verifique los scripts en fragments.html');
+        }
+
+        // Seleccionar todo el texto al enfocar inputs numéricos
+        document.addEventListener('focusin', function(ev){
+            const el = ev.target;
+            if (el && el.classList && el.classList.contains('select-on-focus')) {
+                try { el.select(); } catch (_) {}
+            }
+        });
+
+        // Nombre en factura según tipo de documento (Factura => CONSUMIDOR FINAL)
+        function updateNombreFacturaByTipo() {
+            const checked = document.querySelector('input[name="tipoDocumentoId"]:checked');
+            const nombreTipo = (checked && checked.getAttribute('data-nombre')) ? checked.getAttribute('data-nombre') : '';
+            const nombreInput = document.getElementById('nombreFactura');
+            if (!nombreInput) return;
+            // Si el nombre fue fijado por selección de cliente, no sobreescribir
+            if (nombreInput.dataset.fixed === 'true') return;
+            const isFactura = nombreTipo && nombreTipo.toLowerCase().includes('factura');
+            if (isFactura) {
+                nombreInput.value = 'CONSUMIDOR FINAL';
+            } else {
+                nombreInput.value = '';
+            }
+        }
+
+        // ========== Máscaras y validación para documento factura ==========
+        function digitsOnly(s){ return (s || '').replace(/\D+/g,''); }
+
+        function formatDoc(tipo, raw){
+            const d = digitsOnly(raw);
+            if (tipo === 'DUI') { // 00000000-0
+                const a = d.slice(0,8);
+                const b = d.slice(8,9);
+                return b ? `${a}-${b}` : a;
+            }
+            if (tipo === 'NIT') { // 0000-000000-000-0
+                const s1 = d.slice(0,4);
+                const s2 = d.slice(4,10);
+                const s3 = d.slice(10,13);
+                const s4 = d.slice(13,14);
+                let out = s1;
+                if (s2) out += `-${s2}`;
+                if (s3) out += `-${s3}`;
+                if (s4) out += `-${s4}`;
+                return out;
+            }
+            if (tipo === 'NRC') { // permitir dígitos y un guion en cualquier posición (no auto-insertar)
+                let s = (raw || '').replace(/[^\d-]/g, '');
+                // Colapsar múltiples guiones a uno
+                const parts = s.split('-').filter(Boolean);
+                if (s.includes('-')) {
+                    // Reconstruir con un solo guion y mantener sólo dígitos alrededor
+                    const left = (parts[0] || '').replace(/\D+/g, '');
+                    const right = (parts[1] || '').replace(/\D+/g, '');
+                    return right !== '' ? `${left}-${right}` : left + (s.endsWith('-') ? '-' : '');
+                }
+                // Sin guion: sólo dígitos
+                return d;
+            }
+            return raw || '';
+        }
+
+        function validateDoc(tipo, value){
+            if (!tipo) return true; // sin tipo no validamos
+            if (tipo === 'DUI') return /^\d{8}-\d$/.test(value || '');
+            if (tipo === 'NIT') return /^\d{4}-\d{6}-\d{3}-\d$/.test(value || '');
+            if (tipo === 'NRC') return /^\d+-\d+$/.test(value || '');
+            return true;
+        }
+
+        function updateGuardarStateByDoc(){
+            // Ya no bloqueamos el botón Guardar por validación de documento.
+            // Conservamos las clases visuales mediante updateDocValidityClass() en los puntos necesarios.
+            return;
+        }
+
+        function updateDocPlaceholder(){
+            const tipo = document.getElementById('tipoDocFactura')?.value || '';
+            const doc = document.getElementById('docFactura');
+            if (!doc) return;
+            if (tipo === 'DUI') doc.placeholder = '00000000-0';
+            else if (tipo === 'NIT') doc.placeholder = '0000-000000-000-0';
+            else if (tipo === 'NRC') doc.placeholder = '########-#';
+            else doc.placeholder = '';
+        }
+
+        function updateDocValidityClass(){
+            const tipo = document.getElementById('tipoDocFactura')?.value || '';
+            const doc = document.getElementById('docFactura');
+            if (!doc) return;
+            const valid = validateDoc(tipo, doc.value);
+            doc.classList.toggle('is-invalid', !valid && !!tipo);
+            doc.classList.toggle('is-valid', valid && !!tipo);
+        }
+
+        // ======= Validación de correo =======
+        function isValidEmail(v){
+            if (!v) return false;
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+        }
+        function updateCorreoValidity(){
+            const correoEl = document.getElementById('correoFactura');
+            if (!correoEl) return;
+            const v = (correoEl.value || '').trim();
+            if (!v) {
+                correoEl.classList.remove('is-valid','is-invalid');
+                return;
+            }
+            const ok = isValidEmail(v);
+            correoEl.classList.toggle('is-valid', ok);
+            correoEl.classList.toggle('is-invalid', !ok);
+        }
+
+        function bindDocMasking(){
+            const tipoSel = document.getElementById('tipoDocFactura');
+            const docInput = document.getElementById('docFactura');
+            if (!tipoSel || !docInput) return;
+
+            // Al cambiar tipo, re-formatear el valor actual
+            const onTipoChange = function(){
+                const tipo = tipoSel.value;
+                docInput.value = formatDoc(tipo, docInput.value);
+                updateGuardarStateByDoc();
+                updateDocPlaceholder();
+                updateDocValidityClass();
+                applyRetencionIfNeeded();
+            };
+            tipoSel.addEventListener('change', onTipoChange);
+            if (window.jQuery && $.fn && $.fn.select2) {
+                $(tipoSel).on('select2:select', onTipoChange);
+            }
+
+            // Al escribir, aplicar máscara
+            docInput.addEventListener('input', function(){
+                const tipo = tipoSel.value;
+                // Para NRC, permitir escribir un guion manualmente; para otros, formatear rígido
+                this.value = formatDoc(tipo, this.value);
+                // Ajuste simple del cursor (best-effort)
+                try { this.setSelectionRange(this.value.length, this.value.length); } catch(_){}
+                updateGuardarStateByDoc();
+                updateDocValidityClass();
+            });
+        }
+
+        // Autocompletar según cliente (prioridad NRC > DUI > NIT)
+        function handleClienteChange(silent) {
+            const sel = document.getElementById('cliente');
+            const btnGuardar = document.getElementById('btnGuardar');
+            const nombreInput = document.getElementById('nombreFactura');
+            const tipoDocSel = document.getElementById('tipoDocFactura');
+            const docFacturaInput = document.getElementById('docFactura');
+            if (!sel || !nombreInput || !tipoDocSel || !docFacturaInput) return;
+
+            // Si no hay cliente seleccionado: resetear dependencias sin alertas
+            if (!sel.value) {
+                if (nombreInput) { nombreInput.value = ''; nombreInput.dataset.fixed = 'false'; }
+                if (tipoDocSel) {
+                    tipoDocSel.value = '';
+                    if (window.jQuery && $.fn && $.fn.select2) { $(tipoDocSel).val(null).trigger('change'); }
+                }
+                if (docFacturaInput) { docFacturaInput.value = ''; docFacturaInput.classList.remove('is-valid','is-invalid'); }
+                updateDocPlaceholder();
+                return;
+            }
+
+            const opt = sel.options[sel.selectedIndex];
+            const nombre = opt ? (opt.getAttribute('data-nombre') || '').trim() : '';
+            const nrc = opt ? (opt.getAttribute('data-nrc') || '').trim() : '';
+            const dui = opt ? (opt.getAttribute('data-dui') || '').trim() : '';
+            const nit = opt ? (opt.getAttribute('data-nit') || '').trim() : '';
+            const correo = opt ? (opt.getAttribute('data-correo') || '').trim() : '';
+
+            let tipo = '';
+            let num = '';
+            if (nrc) { tipo = 'NRC'; num = nrc; }
+            else if (dui) { tipo = 'DUI'; num = dui; }
+            else if (nit) { tipo = 'NIT'; num = nit; }
+
+            if (!tipo) {
+                // Sin documentos: alertar y resetear estados, sin bloquear Guardar
+                if (nombreInput) { nombreInput.value = ''; nombreInput.dataset.fixed = 'false'; }
+                if (tipoDocSel) {
+                    tipoDocSel.value = '';
+                    if (window.jQuery && $.fn && $.fn.select2) { $(tipoDocSel).val(null).trigger('change'); }
+                }
+                if (docFacturaInput) { docFacturaInput.value = ''; docFacturaInput.classList.remove('is-valid','is-invalid'); }
+                const correoEl = document.getElementById('correoFactura');
+                if (correoEl) { correoEl.value = ''; correoEl.classList.remove('is-valid','is-invalid'); }
+                if (!silent) {
+                    if (window.Swal && typeof Swal.fire === 'function') {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Cliente sin documento',
+                            text: 'No se puede facturar: el cliente no tiene NRC, DUI ni NIT. Actualice los datos del cliente.',
+                            confirmButtonText: 'Entendido'
+                        });
+                    } else {
+                        alert('No se puede facturar con este cliente: no tiene NRC, DUI ni NIT. Actualice los datos del cliente.');
+                    }
+                }
+                return;
+            }
+
+            // Rellenar nombre factura con el nombre del cliente y fijarlo
+            nombreInput.value = nombre || '';
+            nombreInput.dataset.fixed = 'true';
+
+            // Seleccionar tipo documento factura (Select2 si aplica)
+            tipoDocSel.value = tipo;
+            if (window.jQuery && $.fn && $.fn.select2) {
+                $(tipoDocSel).val(tipo).trigger('change');
+            }
+
+            // Establecer número de documento (formateado por la máscara)
+            docFacturaInput.value = formatDoc(tipo, num);
+            updateGuardarStateByDoc();
+            updateDocPlaceholder();
+            updateDocValidityClass();
+
+            // Establecer correo si existe
+            const correoEl = document.getElementById('correoFactura');
+            if (correoEl) {
+                correoEl.value = correo || '';
+                updateCorreoValidity();
+            }
+
+            // Ya no gestionamos el estado del botón Guardar aquí
+        }
+
+        // Bind cambios a los radios de tipoDocumento
+        document.querySelectorAll('input[name="tipoDocumentoId"]').forEach(r => {
+            r.addEventListener('change', function(){
+                updateNombreFacturaByTipo();
+                applyRetencionIfNeeded();
+            });
+        });
+
+        // Enlazar cambio de cliente (nativo y Select2)
+        const clienteSel = document.getElementById('cliente');
+        if (clienteSel) {
+            clienteSel.addEventListener('change', function(){ handleClienteChange(false); applyRetencionIfNeeded(); });
+            if (window.jQuery && $.fn && $.fn.select2) {
+                $(clienteSel).on('select2:select', function(){ handleClienteChange(false); applyRetencionIfNeeded(); });
+                $(clienteSel).on('select2:clear', function(){ applyRetencionIfNeeded(); });
+            }
+        }
+
+        // Inicializar al cargar
+        updateNombreFacturaByTipo();
+        bindDocMasking();
+        updateDocPlaceholder();
+        updateDocValidityClass();
+        styleTotalsReadonly();
+        // Bind de correo
+        (function(){
+            const correoEl = document.getElementById('correoFactura');
+            if (!correoEl) return;
+            correoEl.addEventListener('input', updateCorreoValidity);
+            correoEl.addEventListener('blur', updateCorreoValidity);
+        })();
+        // Si hay un cliente preseleccionado, aplicar reglas en modo silencioso
+        handleClienteChange(true);
+    });
+</script>
+</body>
+</html>
