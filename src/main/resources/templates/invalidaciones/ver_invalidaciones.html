@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments.html :: head}"></head>
+<body class="hold-transition sidebar-mini layout-fixed">
+<div class="wrapper">
+    <div th:replace="~{fragments.html :: menu}"></div>
+
+    <!-- Content Wrapper. Contains page content -->
+    <div class="content-wrapper">
+        <!-- Content Header (Page header) -->
+        <div class="content-header">
+            <div class="container-fluid">
+                <div class="row mb-2">
+                    <div class="col-sm-6">
+                        <h1 class="m-0" th:text="${title}">Anulaciones</h1>
+                    </div><!-- /.col -->
+                    <div class="col-sm-6">
+                        <ol class="breadcrumb float-sm-right">
+                            <li class="breadcrumb-item"><a href="/home">Home</a></li>
+                            <li class="breadcrumb-item active">Anulaciones</li>
+                        </ol>
+                    </div><!-- /.col -->
+                </div><!-- /.row -->
+            </div><!-- /.container-fluid -->
+        </div>
+        <!-- /.content-header -->
+
+        <!-- Main content -->
+        <section class="content">
+            <div class="container-fluid">
+
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header d-flex align-items-center justify-content-between">
+                                <h3 class="card-title m-0">Listado de anulaciones</h3>
+                            </div>
+                            <div class="card-body">
+                                <!-- Evitar .table-responsive cuando se usa DataTables con scrollX para prevenir conflictos -->
+                                <div>
+                                    <table id="tblInvalidaciones" class="table table-bordered table-striped w-100 nowrap" style="width:100%">
+                                        <thead>
+                                        <tr>
+                                            <th>Acciones</th>
+                                            <th>ID</th>
+                                            <th>Estado</th>
+                                            <th>Código generación</th>
+                                            <th>Sello</th>
+                                            <th>Fecha anulación</th>
+                                            <th>Nombre solicita</th>
+                                            <th>Venta ID</th>
+                                            <th>Doc.</th>
+                                            <th>Fecha doc.</th>
+                                            <th>Total</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        <tr th:each="inv : ${invalidaciones}">
+                                            <td>
+                                                <a class="btn btn-sm btn-primary"
+                                                   th:if="${#strings.isEmpty(inv.selloInvalidacion)}"
+                                                   th:href="@{'/invalidaciones/' + ${inv.id} + '/enviar'}"
+                                                   title="Enviar invalidación">
+                                                    <i class="fas fa-paper-plane"></i>
+                                                </a>
+                                            </td>
+                                            <td th:text="${inv.id}"></td>
+                                            <td>
+                                                <span class="badge"
+                                                      th:text="${#strings.isEmpty(inv.selloInvalidacion) ? 'Pendiente' : 'Procesada'}"
+                                                      th:classappend="${#strings.isEmpty(inv.selloInvalidacion) ? 'badge-warning' : 'badge-success'}"></span>
+                                            </td>
+                                            <td th:text="${inv.codigoGeneracion}"></td>
+                                            <td th:text="${inv.selloInvalidacion}"></td>
+                                            <td th:text="${inv.fecAnula != null ? #temporals.format(inv.fecAnula, 'dd/MM/yyyy') : ''}"></td>
+                                            <td th:text="${inv.nombreSolicita}"></td>
+                                            <td th:text="${inv.venta != null ? inv.venta.id : ''}"></td>
+                                            <td th:text="${inv.venta != null ? inv.venta.tipoDocumento.getNombre() : ''}"></td>
+                                            <td th:text="${inv.venta != null ? #temporals.format(inv.venta.fecha, 'dd/MM/yyyy') : ''}"></td>
+                                            <td th:text="${inv.venta != null ? '$' + inv.venta.total : ''}"></td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- /.row -->
+
+            </div><!-- /.container-fluid -->
+        </section>
+        <!-- /.content -->
+    </div>
+
+
+
+    <footer th:replace="~{fragments.html :: footer}"></footer>
+</div>
+<div th:replace="~{fragments.html :: scripts}"></div>
+<script>
+    $(function(){
+        if (window.jQuery && $('#tblInvalidaciones').length) {
+            // Forzar auto layout para permitir ajuste automático de ancho
+            const style = document.createElement('style');
+            style.textContent = 'table.dataTable{table-layout:auto !important;}';
+            document.head.appendChild(style);
+
+            const sel = '#tblInvalidaciones';
+            const table = $.fn.dataTable.isDataTable(sel)
+                ? $(sel).DataTable()
+                : $(sel).DataTable({
+                    pageLength: 10,
+                    order: [ [1, 'desc'] ], // Columna ID
+                    scrollX: true,
+                    autoWidth: true,
+                    language: { url: 'https://cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json' }
+                });
+
+            function safeAdjust(){
+                try {
+                    const container = table && table.table ? table.table().container() : null;
+                    if (container) { table.columns.adjust(); }
+                } catch (e) { /* noop */ }
+            }
+            setTimeout(safeAdjust, 0);
+            window.addEventListener('resize', safeAdjust);
+        }
+    });
+    </script>
+</body>
+</html>

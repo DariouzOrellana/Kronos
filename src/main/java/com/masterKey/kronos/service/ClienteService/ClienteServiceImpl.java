@@ -25,4 +25,14 @@ public class ClienteServiceImpl implements ClienteService {
     public Optional<Cliente> findById(Long id) {
         return clienteRepository.findById(id);
     }
+
+    @Override
+    public Cliente save(Cliente cliente) {
+        return clienteRepository.save(cliente);
+    }
+
+    @Override
+    public void deleteById(Long id) {
+        clienteRepository.deleteById(id);
+    }
 }

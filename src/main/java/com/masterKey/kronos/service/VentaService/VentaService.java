@@ -11,5 +11,6 @@ public interface VentaService {
     public Venta save(Venta venta);
     public List<Venta> findByContingencia(Integer contingencia);
     public List<Venta> findByIdIn(List<Long> ids);
+    public Venta findById(Long id);
 
 }

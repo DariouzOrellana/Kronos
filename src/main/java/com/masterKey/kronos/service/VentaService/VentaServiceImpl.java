@@ -22,6 +22,11 @@ public class VentaServiceImpl implements VentaService{
     }
 
     @Override
+    public Venta findById(Long id){
+        return ventaRepository.findById(id).get();
+    }
+
+    @Override
     public Venta save(Venta venta) {
         return ventaRepository.save(venta);
     }

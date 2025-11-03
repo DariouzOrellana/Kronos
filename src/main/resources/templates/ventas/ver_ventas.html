@@ -272,6 +272,7 @@
             $('#btnConfirmarAnulacion').on('click', async function(){
                 const ventaId = $('#anularVentaId').val();
                 const payload = {
+                    venta_id: ventaId,
                     tipo_anulacion_id: $('#tipoAnulacionId').val(),
                     motivo_anulacion: $('#motivoAnulacion').val(),
                     nombre_solicita: $('#nombreSolicita').val(),
@@ -279,7 +280,7 @@
                     num_doc_solicita: $('#numDocSolicita').val()
                 };
                 try{
-                    const resp = await fetch(`/ventas/${ventaId}/anular`, {
+                    const resp = await fetch(`/anulacion/guardar`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
@@ -290,10 +291,18 @@
                         location.reload();
                     } else {
                         const text = await resp.text();
-                        alert('No se pudo anular: ' + (text || resp.status));
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'No se pudo anular',
+                            text: text || ('Error ' + resp.status)
+                        });
                     }
                 } catch(e){
-                    alert('Error de red al anular: ' + (e && e.message ? e.message : ''));
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error de red al anular',
+                        text: (e && e.message ? e.message : '')
+                    });
                 }
             });
         }

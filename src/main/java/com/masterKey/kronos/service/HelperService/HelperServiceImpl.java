@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class HelperServiceImpl implements HelperService {
@@ -17,6 +18,12 @@ public class HelperServiceImpl implements HelperService {
     @Autowired
     public HelperServiceImpl(ParametroService parametroService) {
         this.parametroService = parametroService;
+    }
+
+    @Override
+    public String getUID(){
+        String uid = UUID.randomUUID().toString().toUpperCase();
+        return uid;
     }
 
     @Override

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments.html :: head}"></head>
+<body class="hold-transition sidebar-mini layout-fixed">
+<div class="wrapper">
+    <div th:replace="~{fragments.html :: menu}"></div>
+
+    <div class="content-wrapper">
+        <div class="content-header">
+            <div class="container-fluid">
+                <div class="row mb-2">
+                    <div class="col-sm-6">
+                        <h1 class="m-0" th:text="${title}">Crear Cliente</h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <section class="content">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-12">
+                        <!-- Barra superior: Volver -->
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="mr-auto">
+                                        <a th:href="@{/clientes}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver</a>
+                                    </div>
+                                    <div class="mx-auto"></div>
+                                    <div class="ml-auto"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h3 class="card-title m-0">Nuevo cliente</h3>
+                            </div>
+                            <div class="card-body">
+                                <form th:action="@{/clientes/guardar}" method="post" th:object="${cliente}" id="formCliente">
+                                    <div class="form-row">
+                                        <div class="form-group col-md-6">
+                                            <label>Nombre</label>
+                                            <input type="text" th:field="*{nombreCliente}" class="form-control" required>
+                                        </div>
+                                        <div class="form-group col-md-3">
+                                            <label>NIT</label>
+                                            <input type="text" th:field="*{nit}" class="form-control" id="nit">
+                                        </div>
+                                        <div class="form-group col-md-3">
+                                            <label>DUI</label>
+                                            <input type="text" th:field="*{dui}" class="form-control" id="dui">
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group col-md-3">
+                                            <label>N° Registro</label>
+                                            <input type="text" th:field="*{noRegistro}" class="form-control">
+                                        </div>
+                                        <div class="form-group col-md-3">
+                                            <label>Teléfono</label>
+                                            <input type="text" th:field="*{telefono}" class="form-control">
+                                        </div>
+                                        <div class="form-group col-md-6">
+                                            <label>Correo</label>
+                                            <input type="email" th:field="*{correo}" class="form-control">
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Dirección</label>
+                                        <textarea th:field="*{direccion}" class="form-control" rows="2"></textarea>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group col-md-3">
+                                            <label>Departamento</label>
+                                            <select name="departamentoId" id="departamentoId" class="form-control select2" data-placeholder="Seleccione departamento">
+                                                <option value=""></option>
+                                                <option th:each="d : ${departamentos}" th:value="${d.id}" th:text="${d.nombreDepartamento}"></option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group col-md-3">
+                                            <label>Municipio</label>
+                                            <select name="municipioId" id="municipioId" class="form-control select2" data-placeholder="Seleccione municipio">
+                                                <option value=""></option>
+                                                <option th:each="m : ${municipios}" th:value="${m.id}" th:text="${m.nombreMunicipio}"
+                                                        th:attr="data-depto-id=${m.departamento != null ? m.departamento.id : ''}"></option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group col-md-3">
+                                            <label>Actividad Económica</label>
+                                            <select name="actividadId" class="form-control select2" data-placeholder="Seleccione actividad">
+                                                <option value=""></option>
+                                                <option th:each="a : ${actividades}" th:value="${a.id}" th:text="${a.nombreActividadEconomica}"></option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group col-md-3">
+                                            <label>Tipo Contribuyente</label>
+                                            <select name="tipoContribuyenteId" class="form-control select2" data-placeholder="Seleccione tipo">
+                                                <option value=""></option>
+                                                <option th:each="t : ${tiposContribuyente}" th:value="${t.id}" th:text="${t.nombre}"></option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="form-group col-md-3 pl-0">
+                                        <label>Estado</label>
+                                        <input type="number" th:field="*{estado}" class="form-control" value="1">
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Barra inferior: Cancelar/Guardar -->
+                        <div class="card mt-3">
+                            <div class="card-body">
+                                <div class="d-flex">
+                                    <div class="mr-auto"></div>
+                                    <div class="ml-auto d-flex align-items-center">
+                                        <a th:href="@{/clientes}" class="btn btn-secondary mr-2"><i class="fas fa-times"></i> Cancelar</a>
+                                        <button type="submit" form="formCliente" class="btn btn-primary"><i class="fas fa-save"></i> Guardar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <footer th:replace="~{fragments.html :: footer}"></footer>
+</div>
+<div th:replace="~{fragments.html :: scripts}"></div>
+<script>
+    document.addEventListener('DOMContentLoaded', function(){
+        if (window.jQuery && $.fn.select2) {
+            $('.select2').select2({ width: '100%', allowClear: true, placeholder: function(){ return $(this).data('placeholder') || 'Seleccione'; } });
+        }
+        // Cascada Departamento -> Municipio
+        (function(){
+            const $dep = $('#departamentoId');
+            const $mun = $('#municipioId');
+            if (!$dep.length || !$mun.length) return;
+            // Guardar todas las opciones de municipio
+            const allOptions = $mun.find('option').clone();
+            function filterMunicipios(){
+                const depId = ($dep.val()||'').toString();
+                const current = $mun.val();
+                $mun.empty().append(allOptions.filter(function(){
+                    const v = $(this).val();
+                    if (!v) return true; // placeholder vacío
+                    const d = $(this).attr('data-depto-id') || '';
+                    return depId === '' || d === depId;
+                }));
+                if ($.fn.select2 && $mun.hasClass('select2-hidden-accessible')){
+                    $mun.val('').trigger('change.select2');
+                } else {
+                    $mun.val('');
+                }
+            }
+            $dep.on('change', filterMunicipios);
+        })();
+        function onlyDigits(s){ return (s||'').replace(/\D+/g,''); }
+        function fmtDUI(d){ d = onlyDigits(d).slice(0,9); return d.length>8 ? d.slice(0,8)+'-'+d.slice(8) : d; }
+        function fmtNIT(d){ d = onlyDigits(d).slice(0,14); const a=d.slice(0,4),b=d.slice(4,10),c=d.slice(10,13),e=d.slice(13,14); return [a,b,c,e].filter(Boolean).join('-'); }
+        const dui = document.getElementById('dui');
+        const nit = document.getElementById('nit');
+        if (dui) dui.addEventListener('input', function(){ this.value = fmtDUI(this.value); this.maxLength = 10; this.placeholder = '########-#'; });
+        if (nit) nit.addEventListener('input', function(){ this.value = fmtNIT(this.value); this.maxLength = 17; this.placeholder = '####-######-###-#'; });
+    });
+</script>
+</body>
+</html>

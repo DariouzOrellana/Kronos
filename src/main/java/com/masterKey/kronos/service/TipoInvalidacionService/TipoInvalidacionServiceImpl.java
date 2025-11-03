@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class TipoInvalidacionServiceImpl implements TipoInvalidacionService{
@@ -20,5 +21,10 @@ public class TipoInvalidacionServiceImpl implements TipoInvalidacionService{
     @Override
     public List<TipoInvalidacion> findAll(){
         return tipoInvalidacionRepository.findAllByOrderByIdAsc();
+    }
+
+    @Override
+    public Optional<TipoInvalidacion> findById(Long id){
+        return tipoInvalidacionRepository.findById(id);
     }
 }

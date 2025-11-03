@@ -4,4 +4,6 @@ import com.masterKey.kronos.model.Invalidacion;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface InvalidacionRepository extends JpaRepository<Invalidacion, Long> {
+
+    Invalidacion findByVentaId(Long ventaId);
 }

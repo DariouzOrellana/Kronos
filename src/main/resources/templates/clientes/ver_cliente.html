@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments.html :: head}"></head>
+<body class="hold-transition sidebar-mini layout-fixed">
+<div class="wrapper">
+    <div th:replace="~{fragments.html :: menu}"></div>
+
+    <div class="content-wrapper">
+        <div class="content-header">
+            <div class="container-fluid">
+                <div class="row mb-2">
+                    <div class="col-sm-6">
+                        <h1 class="m-0" th:text="${title}">Detalle Cliente</h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <section class="content">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-12">
+                        <!-- Barra superior: Volver -->
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="mr-auto">
+                                        <a th:href="@{/clientes}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver</a>
+                                    </div>
+                                    <div class="mx-auto"></div>
+                                    <div class="ml-auto"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h3 class="card-title m-0">Información del cliente</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p><strong>ID:</strong> <span th:text="${cliente.id}"></span></p>
+                                        <p><strong>Nombre:</strong> <span th:text="${cliente.nombreCliente}"></span></p>
+                                        <p><strong>NIT:</strong> <span th:text="${cliente.nit}"></span></p>
+                                        <p><strong>DUI:</strong> <span th:text="${cliente.dui}"></span></p>
+                                        <p><strong>N° Registro:</strong> <span th:text="${cliente.noRegistro}"></span></p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p><strong>Teléfono:</strong> <span th:text="${cliente.telefono}"></span></p>
+                                        <p><strong>Correo:</strong> <span th:text="${cliente.correo}"></span></p>
+                                        <p><strong>Dirección:</strong> <span th:text="${cliente.direccion}"></span></p>
+                                        <p><strong>Estado:</strong> <span th:text="${cliente.estado}"></span></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Barra inferior: Acciones -->
+                        <div class="card mt-3">
+                            <div class="card-body">
+                                <div class="d-flex">
+                                    <div class="mr-auto"></div>
+                                    <div class="ml-auto d-flex align-items-center">
+                                        <a th:href="@{'/clientes/' + ${cliente.id} + '/editar'}" class="btn btn-primary mr-2"><i class="fas fa-edit"></i> Editar</a>
+                                        <form th:action="@{'/clientes/' + ${cliente.id} + '/eliminar'}" method="post" style="display:inline" class="js-delete-form">
+                                            <button type="submit" class="btn btn-danger"><i class="fas fa-trash"></i> Eliminar</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <footer th:replace="~{fragments.html :: footer}"></footer>
+</div>
+<div th:replace="~{fragments.html :: scripts}"></div>
+<script>
+    document.addEventListener('DOMContentLoaded', function(){
+        $(document).on('submit', '.js-delete-form', function(e){
+            e.preventDefault();
+            const form = this;
+            Swal.fire({
+                title: '¿Eliminar cliente?',
+                text: 'Esta acción no se puede deshacer',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    });
+</script>
+</body>
+</html>
