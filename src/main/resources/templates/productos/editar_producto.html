@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments.html :: head}"></head>
+<body class="hold-transition sidebar-mini layout-fixed">
+<div class="wrapper">
+    <div th:replace="~{fragments.html :: menu}"></div>
+
+    <div class="content-wrapper">
+        <div class="content-header">
+            <div class="container-fluid">
+                <div class="row mb-2">
+                    <div class="col-sm-6">
+                        <h1 class="m-0" th:text="${title}">Editar Producto</h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <section class="content">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-12">
+                        <!-- Barra superior: Volver -->
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="mr-auto">
+                                        <a th:href="@{/productos}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver</a>
+                                    </div>
+                                    <div class="mx-auto"></div>
+                                    <div class="ml-auto"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h3 class="card-title m-0">Editar producto</h3>
+                            </div>
+                            <div class="card-body">
+                                <form th:action="@{'/productos/' + ${producto.id} + '/actualizar'}" method="post" th:object="${producto}" id="formProducto">
+                                    <div class="form-row">
+                                        <div class="form-group col-md-8">
+                                            <label>Descripción</label>
+                                            <textarea th:field="*{descripcion}" class="form-control" rows="2" required></textarea>
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <label>Precio</label>
+                                            <div class="input-group">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text"><i class="fas fa-dollar-sign"></i></span>
+                                                </div>
+                                                <input type="text" th:field="*{precio}" id="precio" class="form-control" inputmode="decimal" pattern="^\d*(\.\d{0,2})?$" placeholder="0.00" required>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group col-md-4">
+                                            <label>Tipo</label>
+                                            <select th:field="*{tipo}" class="form-control" required>
+                                                <option value="">Seleccione</option>
+                                                <option value="PRODUCTO">Producto</option>
+                                                <option value="SERVICIO">Servicio</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Barra inferior: Cancelar/Guardar -->
+                        <div class="card mt-3">
+                            <div class="card-body">
+                                <div class="d-flex">
+                                    <div class="mr-auto"></div>
+                                    <div class="ml-auto d-flex align-items-center">
+                                        <a th:href="@{/productos}" class="btn btn-secondary mr-2"><i class="fas fa-times"></i> Cancelar</a>
+                                        <button type="submit" form="formProducto" class="btn btn-primary"><i class="fas fa-save"></i> Guardar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <footer th:replace="~{fragments.html :: footer}"></footer>
+</div>
+<div th:replace="~{fragments.html :: scripts}"></div>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  const precio = document.getElementById('precio');
+  const form = document.getElementById('formProducto');
+  function validatePrecio(el){
+    const v = el.value.trim();
+    const n = v === '' ? NaN : Number(v);
+    const ok = !isNaN(n) && n > 0;
+    el.setCustomValidity(ok ? '' : 'El precio debe ser mayor que 0');
+  }
+  if (precio){
+    precio.addEventListener('input', function(){
+      let v = this.value.replace(/[^\d.]/g,'');
+      const firstDot = v.indexOf('.');
+      if (firstDot !== -1){
+        v = v.slice(0, firstDot + 1) + v.slice(firstDot + 1).replace(/\./g,'');
+      }
+      const parts = v.split('.');
+      if (parts.length === 2) {
+        parts[1] = parts[1].slice(0,2);
+        v = parts[0] + '.' + parts[1];
+      }
+      this.value = v;
+      validatePrecio(this);
+    });
+    precio.addEventListener('blur', function(){ validatePrecio(this); });
+  }
+  if (form){
+    form.addEventListener('submit', function(e){
+      if (precio){ validatePrecio(precio); }
+      if (!form.checkValidity()){
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    });
+  }
+});
+</script>
+</body>
+</html>

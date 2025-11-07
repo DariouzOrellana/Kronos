@@ -97,7 +97,8 @@ public class VentaController extends BaseController{
         model.addAttribute("tipoContribuyente", tipoContribuyente);
 
 
-        model.addAttribute("clientes", clienteService.findAll());
+        model.addAttribute("clientes", clienteService.findAllByEstado(1));
+
         model.addAttribute("tiposDocumento", tipoDocumentoService.findAll());
         model.addAttribute("usuarios", usuarioService.findAll());
         model.addAttribute("productos", productoService.findAll());

@@ -4,4 +4,6 @@ import com.masterKey.kronos.model.Caja;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface CajaRepository extends JpaRepository<Caja, Long> {
+    boolean existsBySucursalIdAndPuntoVentaMhIgnoreCase(Long sucursalId, String puntoVentaMh);
+    boolean existsBySucursalIdAndPuntoVentaMhIgnoreCaseAndIdNot(Long sucursalId, String puntoVentaMh, Long id);
 }

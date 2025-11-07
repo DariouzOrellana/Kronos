@@ -24,4 +24,8 @@ public class Rol {
     public String getNombreRol() {
         return nombreRol;
     }
+
+    public Long getId() {
+        return id;
+    }
 }

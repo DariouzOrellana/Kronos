@@ -26,4 +26,9 @@ public class ContingenciaServiceImpl implements ContingenciaService{
     public Contingencia save(Contingencia contingencia){
         return contingenciaRepository.save(contingencia);
     }
+
+    @Override
+    public Contingencia findById(Long id){
+        return contingenciaRepository.findById(id).get();
+    }
 }

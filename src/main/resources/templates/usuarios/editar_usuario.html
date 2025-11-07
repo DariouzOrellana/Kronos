@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments.html :: head}"></head>
+<body class="hold-transition sidebar-mini layout-fixed">
+<div class="wrapper">
+    <div th:replace="~{fragments.html :: menu}"></div>
+
+    <div class="content-wrapper">
+        <div class="content-header">
+            <div class="container-fluid">
+                <div class="row mb-2">
+                    <div class="col-sm-6">
+                        <h1 class="m-0" th:text="${title}">Editar Usuario</h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <section class="content">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <form th:action="@{'/usuarios/' + ${usuario.id} + '/actualizar'}" th:object="${usuario}" method="post" id="formUsuario">
+                                    <div class="form-row">
+                                        <div class="form-group col-md-4">
+                                            <label for="username">Usuario</label>
+                                            <input type="text" class="form-control" id="username" name="username" th:field="*{username}" required>
+                                            <div class="invalid-feedback">Obligatorio.</div>
+                                            <div class="invalid-feedback d-block" th:if="${usernameError}" th:text="${usernameError}"></div>
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <label for="password">Contraseña</label>
+                                            <input type="password" class="form-control" id="password" name="password" th:field="*{password}" placeholder="Dejar en blanco para mantener">
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <label for="rolId">Rol</label>
+                                            <select class="form-control select2" id="rolId" name="rolId" required>
+                                                <option value="">-- Seleccione --</option>
+                                                <option th:each="r : ${roles}"
+                                                        th:value="${r.id}"
+                                                        th:text="${r.nombreRol}"
+                                                        th:selected="${usuario.rol != null} ? ${r.id} == ${usuario.rol.id} : false"></option>
+                                            </select>
+                                            <div class="invalid-feedback">Obligatorio.</div>
+                                            <div class="invalid-feedback d-block" th:if="${rolError}" th:text="${rolError}"></div>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group col-md-4">
+                                            <label for="cajaId">Caja</label>
+                                            <select class="form-control select2" id="cajaId" name="cajaId" required>
+                                                <option value="">-- Seleccione --</option>
+                                                <option th:each="c : ${cajas}"
+                                                        th:value="${c.id}"
+                                                        th:text="${c.descripcion}"
+                                                        th:selected="${usuario.caja != null} ? ${c.id} == ${usuario.caja.id} : false"></option>
+                                            </select>
+                                            <div class="invalid-feedback">Obligatorio.</div>
+                                            <div class="invalid-feedback d-block" th:if="${cajaError}" th:text="${cajaError}"></div>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex justify-content-between">
+                                        <a th:href="@{/usuarios}" class="btn btn-secondary">Cancelar</a>
+                                        <button type="submit" class="btn btn-primary">Actualizar</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <footer th:replace="~{fragments.html :: footer}"></footer>
+</div>
+<div th:replace="~{fragments.html :: scripts}"></div>
+<script>
+    document.addEventListener('DOMContentLoaded', function(){
+        const form = document.getElementById('formUsuario');
+        const username = document.getElementById('username');
+        const rolSel = document.getElementById('rolId');
+        const cajaSel = document.getElementById('cajaId');
+        function toggle(el, ok, has){ el.classList.remove('is-valid','valid','is-invalid','invalid'); if(!has) return; (ok?el.classList.add('is-valid','valid'):el.classList.add('is-invalid','invalid')); }
+        function validate(){
+            const uOk = (username.value||'').trim().length>0; toggle(username, uOk, true);
+            const rOk = !!(rolSel && rolSel.value); rolSel && toggle(rolSel, rOk, true);
+            const cOk = !!(cajaSel && cajaSel.value); cajaSel && toggle(cajaSel, cOk, true);
+            return uOk && rOk && cOk;
+        }
+        username.addEventListener('input', validate); username.addEventListener('blur', validate);
+        rolSel && rolSel.addEventListener('change', validate);
+        cajaSel && cajaSel.addEventListener('change', validate);
+        form.addEventListener('submit', function(e){ if(!validate()){ e.preventDefault(); e.stopPropagation(); }});
+        if (window.jQuery){ $('.select2').select2({ width: '100%' }); }
+    });
+</script>
+</body>
+</html>

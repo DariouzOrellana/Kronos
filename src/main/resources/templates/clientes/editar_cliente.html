@@ -40,31 +40,40 @@
                             <div class="card-body">
                                 <form th:action="@{'/clientes/' + ${cliente.id} + '/actualizar'}" method="post" th:object="${cliente}" id="formCliente">
                                     <div class="form-row">
+                                        <div class="form-group col-md-3">
+                                            <label>Estado</label>
+                                            <select th:field="*{estado}" id="estado" class="form-control">
+                                                <option th:value="1">Activo</option>
+                                                <option th:value="0">Inactivo</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
                                         <div class="form-group col-md-6">
                                             <label>Nombre</label>
                                             <input type="text" th:field="*{nombreCliente}" class="form-control" required>
                                         </div>
                                         <div class="form-group col-md-3">
-                                            <label>NIT</label>
-                                            <input type="text" th:field="*{nit}" class="form-control" id="nit">
+                                            <label>DUI</label>
+                                            <input type="text" th:field="*{dui}" class="form-control" id="dui" placeholder="########-#" pattern="\d{8}-\d">
                                         </div>
                                         <div class="form-group col-md-3">
-                                            <label>DUI</label>
-                                            <input type="text" th:field="*{dui}" class="form-control" id="dui">
+                                            <label>NIT</label>
+                                            <input type="text" th:field="*{nit}" class="form-control" id="nit" placeholder="####-######-###-#" pattern="\d{4}-\d{6}-\d{3}-\d">
                                         </div>
                                     </div>
                                     <div class="form-row">
                                         <div class="form-group col-md-3">
                                             <label>N° Registro</label>
-                                            <input type="text" th:field="*{noRegistro}" class="form-control">
+                                            <input type="text" th:field="*{noRegistro}" id="noRegistro" class="form-control" placeholder="0-0" pattern="^[0-9]+-[0-9]+$">
                                         </div>
                                         <div class="form-group col-md-3">
                                             <label>Teléfono</label>
-                                            <input type="text" th:field="*{telefono}" class="form-control">
+                                            <input type="text" th:field="*{telefono}" id="telefono" class="form-control" placeholder="0000-0000" pattern="\d{4}-\d{4}">
                                         </div>
                                         <div class="form-group col-md-6">
                                             <label>Correo</label>
-                                            <input type="email" th:field="*{correo}" class="form-control">
+                                            <input type="email" th:field="*{correo}" id="correo" class="form-control" placeholder="correo@dominio.com">
                                         </div>
                                     </div>
                                     <div class="form-group">
@@ -111,10 +120,7 @@
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="form-group col-md-3 pl-0">
-                                        <label>Estado</label>
-                                        <input type="number" th:field="*{estado}" class="form-control" value="1">
-                                    </div>
+                                    
                                 </form>
                             </div>
                         </div>
@@ -183,10 +189,72 @@
         function onlyDigits(s){ return (s||'').replace(/\D+/g,''); }
         function fmtDUI(d){ d = onlyDigits(d).slice(0,9); return d.length>8 ? d.slice(0,8)+'-'+d.slice(8) : d; }
         function fmtNIT(d){ d = onlyDigits(d).slice(0,14); const a=d.slice(0,4),b=d.slice(4,10),c=d.slice(10,13),e=d.slice(13,14); return [a,b,c,e].filter(Boolean).join('-'); }
+        function fmtTel(d){ d = onlyDigits(d).slice(0,8); const a=d.slice(0,4), b=d.slice(4,8); return [a,b].filter(Boolean).join('-'); }
+        function sanitizeNoReg(el){ let v = (el.value||'').replace(/[^0-9-]/g,''); v = v.replace(/-+/g,'-'); const parts = v.split('-'); if (parts.length>2){ v = parts[0]+'-'+parts.slice(1).join(''); } el.value = v; }
         const dui = document.getElementById('dui');
         const nit = document.getElementById('nit');
-        if (dui) dui.addEventListener('input', function(){ this.value = fmtDUI(this.value); this.maxLength = 10; this.placeholder = '########-#'; });
-        if (nit) nit.addEventListener('input', function(){ this.value = fmtNIT(this.value); this.maxLength = 17; this.placeholder = '####-######-###-#'; });
+        const tel = document.getElementById('telefono');
+        const nro = document.getElementById('noRegistro');
+        const mail = document.getElementById('correo');
+        function toggleInvalid(el, force){
+            const show = !!force || el.dataset.touched === 'true';
+            const hasVal = el.value !== '';
+            const good = hasVal && el.checkValidity();
+            const bad = hasVal && !el.checkValidity();
+            el.classList.remove('is-invalid','invalid','is-valid','valid');
+            if (show){
+                el.classList.toggle('is-invalid', bad);
+                el.classList.toggle('invalid', bad);
+                el.classList.toggle('is-valid', good);
+                el.classList.toggle('valid', good);
+            }
+            console.log('[validate]', el.id || el.name, {
+                value: el.value,
+                pattern: el.getAttribute('pattern'),
+                type: el.type,
+                valid: good,
+                invalid: bad,
+                touched: el.dataset.touched === 'true',
+                forced: !!force,
+                classes: el.className
+            });
+        }
+        if (dui) dui.addEventListener('input', function(){ this.dataset.touched = 'true'; this.value = fmtDUI(this.value); this.maxLength = 10; this.placeholder = '########-#'; toggleInvalid(this); });
+        if (nit) nit.addEventListener('input', function(){ this.dataset.touched = 'true'; this.value = fmtNIT(this.value); this.maxLength = 17; this.placeholder = '####-######-###-#'; toggleInvalid(this); });
+        if (tel) tel.addEventListener('input', function(){ this.dataset.touched = 'true'; this.value = fmtTel(this.value); this.maxLength = 9; this.placeholder = '0000-0000'; toggleInvalid(this); });
+        if (nro) nro.addEventListener('input', function(){ this.dataset.touched = 'true'; sanitizeNoReg(this); this.placeholder = '0-0'; toggleInvalid(this); });
+        if (mail){
+            const handler = function(){ this.dataset.touched = 'true'; toggleInvalid(this); };
+            mail.addEventListener('input', handler);
+            mail.addEventListener('blur', function(){ this.dataset.touched = 'true'; toggleInvalid(this); });
+        }
+        const form = document.getElementById('formCliente');
+        // Estado background color updater
+        (function(){
+            const estadoSel = document.getElementById('estado');
+            if (!estadoSel) return;
+            function updateEstadoBg(){
+                const v = (estadoSel.value||'').toString();
+                estadoSel.classList.remove('bg-success','bg-secondary','text-white');
+                if (v === '1'){
+                    estadoSel.classList.add('bg-success','text-white');
+                } else {
+                    estadoSel.classList.add('bg-secondary','text-white');
+                }
+            }
+            updateEstadoBg();
+            estadoSel.addEventListener('change', updateEstadoBg);
+        })();
+        if (form){
+            form.addEventListener('submit', function(){
+                const inputs = [dui, nit, tel, nro, mail].filter(Boolean);
+                inputs.forEach(i => toggleInvalid(i, true));
+                console.log('[submit-validity]', {
+                    formValid: form.checkValidity(),
+                    fields: inputs.map(i => ({ id: i.id || i.name, valid: i.checkValidity(), value: i.value, pattern: i.getAttribute('pattern'), classes: i.className }))
+                });
+            });
+        }
     });
 </script>
 </body>

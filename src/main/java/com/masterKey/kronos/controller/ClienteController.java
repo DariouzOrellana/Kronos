@@ -60,9 +60,9 @@ public class ClienteController extends BaseController {
 
     @PostMapping("/guardar")
     public String guardar(@ModelAttribute("cliente") Cliente cliente,
-                          @RequestParam(value = "departamentoId", required = false) Long departamentoId,
-                          @RequestParam(value = "municipioId", required = false) Long municipioId,
-                          @RequestParam(value = "actividadId", required = false) Long actividadId,
+                          @RequestParam(value = "departamentoId", required = false) String departamentoId,
+                          @RequestParam(value = "municipioId", required = false) String municipioId,
+                          @RequestParam(value = "actividadId", required = false) String actividadId,
                           @RequestParam(value = "tipoContribuyenteId", required = false) Long tipoContribuyenteId,
                           BindingResult result, Model model) {
         if (result.hasErrors()) {
@@ -70,9 +70,9 @@ public class ClienteController extends BaseController {
             cargarCatalogos(model);
             return "clientes/crear_cliente";
         }
-        if (departamentoId != null) departamentoRepository.findById(departamentoId.toString()).ifPresent(cliente::setDepartamento);
-        if (municipioId != null) municipioRepository.findById(municipioId.toString()).ifPresent(cliente::setMunicipio);
-        if (actividadId != null) actividadEconomicaRepository.findById(actividadId.toString()).ifPresent(cliente::setActividadEconomica);
+        if (departamentoId != null && !departamentoId.isBlank()) departamentoRepository.findById(departamentoId).ifPresent(cliente::setDepartamento);
+        if (municipioId != null && !municipioId.isBlank()) municipioRepository.findById(municipioId).ifPresent(cliente::setMunicipio);
+        if (actividadId != null && !actividadId.isBlank()) actividadEconomicaRepository.findById(actividadId).ifPresent(cliente::setActividadEconomica);
         if (tipoContribuyenteId != null) tipoContribuyenteRepository.findById(tipoContribuyenteId).ifPresent(cliente::setTipoContribuyente);
         clienteService.save(cliente);
         return "redirect:/clientes";
@@ -104,9 +104,9 @@ public class ClienteController extends BaseController {
     @PostMapping("/{id}/actualizar")
     public String actualizar(@PathVariable Long id,
                              @ModelAttribute("cliente") Cliente cliente,
-                             @RequestParam(value = "departamentoId", required = false) Long departamentoId,
-                             @RequestParam(value = "municipioId", required = false) Long municipioId,
-                             @RequestParam(value = "actividadId", required = false) Long actividadId,
+                             @RequestParam(value = "departamentoId", required = false) String departamentoId,
+                             @RequestParam(value = "municipioId", required = false) String municipioId,
+                             @RequestParam(value = "actividadId", required = false) String actividadId,
                              @RequestParam(value = "tipoContribuyenteId", required = false) Long tipoContribuyenteId,
                              BindingResult result, Model model) {
         if (result.hasErrors()) {
@@ -115,9 +115,9 @@ public class ClienteController extends BaseController {
             return "clientes/editar_cliente";
         }
         cliente.setId(id);
-        if (departamentoId != null) departamentoRepository.findById(departamentoId.toString()).ifPresent(cliente::setDepartamento);
-        if (municipioId != null) municipioRepository.findById(municipioId.toString()).ifPresent(cliente::setMunicipio);
-        if (actividadId != null) actividadEconomicaRepository.findById(actividadId.toString()).ifPresent(cliente::setActividadEconomica);
+        if (departamentoId != null && !departamentoId.isBlank()) departamentoRepository.findById(departamentoId).ifPresent(cliente::setDepartamento);
+        if (municipioId != null && !municipioId.isBlank()) municipioRepository.findById(municipioId).ifPresent(cliente::setMunicipio);
+        if (actividadId != null && !actividadId.isBlank()) actividadEconomicaRepository.findById(actividadId).ifPresent(cliente::setActividadEconomica);
         if (tipoContribuyenteId != null) tipoContribuyenteRepository.findById(tipoContribuyenteId).ifPresent(cliente::setTipoContribuyente);
         clienteService.save(cliente);
         return "redirect:/clientes";

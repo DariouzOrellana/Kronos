@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments.html :: head}"></head>
+<body class="hold-transition sidebar-mini layout-fixed">
+<div class="wrapper">
+    <div th:replace="~{fragments.html :: menu}"></div>
+
+    <div class="content-wrapper">
+        <div class="content-header">
+            <div class="container-fluid">
+                <div class="row mb-2">
+                    <div class="col-sm-6">
+                        <h1 class="m-0" th:text="${title}">Crear Sucursal</h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <section class="content">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <form th:action="@{/sucursales/guardar}" th:object="${sucursal}" method="post" id="formSucursal">
+                                    <div class="form-row">
+                                        <div class="form-group col-md-3">
+                                            <label for="estado">Estado</label>
+                                            <select class="form-control" id="estado" name="estado" th:field="*{estado}">
+                                                <option th:value="1">Activo</option>
+                                                <option th:value="0">Inactivo</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group col-md-6">
+                                            <label for="nombreSucursal">Nombre</label>
+                                            <input type="text" class="form-control" id="nombreSucursal" name="nombreSucursal" th:field="*{nombreSucursal}" placeholder="Nombre de sucursal" required>
+                                            <div class="invalid-feedback">Obligatorio.</div>
+                                        </div>
+                                        <div class="form-group col-md-6">
+                                            <label for="empresaId">Empresa</label>
+                                            <select class="form-control" id="empresaId" name="empresaId" required>
+                                                <option value="" selected>-- Seleccione --</option>
+                                                <option th:each="e : ${empresas}"
+                                                        th:if="${e.estado} == 1"
+                                                        th:value="${e.id}"
+                                                        th:text="${e.nombreEmpresa}"></option>
+                                            </select>
+                                            <div class="invalid-feedback">Debe seleccionar una empresa.</div>
+                                            <div class="invalid-feedback d-block" th:if="${empresaError}" th:text="${empresaError}"></div>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group col-md-6">
+                                            <label for="telefono">Teléfono</label>
+                                            <input type="text" class="form-control" id="telefono" name="telefono" th:field="*{telefono}" placeholder="0000-0000" pattern="\d{4}-\d{4}" title="Formato requerido: 0000-0000" maxlength="9">
+                                        </div>
+                                        <div class="form-group col-md-6">
+                                            <label for="correo">Correo</label>
+                                            <input type="email" class="form-control" id="correo" name="correo" th:field="*{correo}" placeholder="correo@dominio.com">
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group col-md-6">
+                                            <label for="establecimientoMh">Establecimiento MH</label>
+                                            <input type="text" class="form-control" id="establecimientoMh" name="establecimientoMh" th:field="*{establecimientoMh}" placeholder="Ej. M001 o S001" pattern="[MS]\d{3}" title="Formato requerido: M001 o S001 (letra M o S y 3 dígitos)" maxlength="4" required>
+                                            <div class="invalid-feedback">Obligatorio. Formato: M001 o S001.</div>
+                                            <div class="invalid-feedback d-block" th:if="${#fields.hasErrors('establecimientoMh')}" th:errors="*{establecimientoMh}"></div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="direccion">Dirección</label>
+                                        <textarea class="form-control" id="direccion" name="direccion" th:field="*{direccion}" rows="2" placeholder="Dirección"></textarea>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <a th:href="@{/sucursales}" class="btn btn-secondary">Cancelar</a>
+                                        <button type="submit" class="btn btn-primary">Guardar</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <footer th:replace="~{fragments.html :: footer}"></footer>
+</div>
+<div th:replace="~{fragments.html :: scripts}"></div>
+<script>
+    document.addEventListener('DOMContentLoaded', function(){
+        const form = document.getElementById('formSucursal');
+        const nombre = document.getElementById('nombreSucursal');
+        const tel = document.getElementById('telefono');
+        const correo = document.getElementById('correo');
+        const empresa = document.getElementById('empresaId');
+        const estadoSel = document.getElementById('estado');
+        const est = document.getElementById('establecimientoMh');
+
+        function toggleClasses(el, ok, hasVal){
+            el.classList.remove('is-valid','valid','is-invalid','invalid');
+            if (!hasVal) return;
+            if (ok){ el.classList.add('is-valid','valid'); }
+            else { el.classList.add('is-invalid','invalid'); }
+        }
+
+        function validateNombre(force=false, onBlur=false){
+            let v = (nombre.value||'');
+            if (force || onBlur) v = v.trim();
+            nombre.value = v;
+            if (force) nombre.dataset.touched = '1';
+            const touched = nombre.dataset.touched === '1';
+            const ok = (v||'').length > 0;
+            toggleClasses(nombre, ok, touched || force);
+            nombre.setCustomValidity(ok ? '' : 'Campo obligatorio');
+        }
+
+        function maskTelefono(){
+            let v = (tel.value||'').replace(/\D/g,'').slice(0,8);
+            if (v.length > 4) v = v.slice(0,4) + '-' + v.slice(4);
+            tel.value = v;
+            const ok = /^\d{4}-\d{4}$/.test(v);
+            toggleClasses(tel, ok, v.length>0);
+            tel.setCustomValidity(v.length===0 ? '' : (ok ? '' : 'Formato 0000-0000'));
+        }
+
+        function validateCorreo(){
+            const v = (correo.value||'').trim();
+            const ok = correo.checkValidity();
+            toggleClasses(correo, ok, v.length>0);
+        }
+
+        function validateEst(){
+            let v = (est.value||'').toUpperCase().replace(/[^MS0-9]/g,'');
+            if (v.length > 4) v = v.slice(0,4);
+            est.value = v;
+            const ok = /^[MS]\d{3}$/.test(v);
+            toggleClasses(est, ok, true);
+            est.setCustomValidity(ok ? '' : (v.length===0 ? 'Campo obligatorio' : 'Formato M001 o S001'));
+        }
+
+        if (nombre){
+            nombre.addEventListener('input', function(){ nombre.dataset.touched='1'; validateNombre(false, false); });
+            nombre.addEventListener('blur', function(){ nombre.dataset.touched='1'; validateNombre(false, true); });
+        }
+        tel && tel.addEventListener('input', maskTelefono);
+        tel && tel.addEventListener('blur', maskTelefono);
+        correo && correo.addEventListener('input', validateCorreo);
+        correo && correo.addEventListener('blur', validateCorreo);
+        est && est.addEventListener('input', validateEst);
+        est && est.addEventListener('blur', validateEst);
+        function updateEstadoStyle(){
+            if (!estadoSel) return;
+            const v = (estadoSel.value||'').toString();
+            estadoSel.classList.remove('bg-success','bg-secondary','text-white');
+            if (v === '1') { estadoSel.classList.add('bg-success','text-white'); }
+            else if (v === '0') { estadoSel.classList.add('bg-secondary','text-white'); }
+        }
+        updateEstadoStyle();
+        estadoSel && estadoSel.addEventListener('change', updateEstadoStyle);
+        if (empresa){
+            function validateEmpresa(){
+                empresa.classList.remove('is-valid','valid','is-invalid','invalid');
+                if (empresa.value){ empresa.classList.add('is-valid','valid'); }
+                else { empresa.classList.add('is-invalid','invalid'); }
+            }
+            empresa.addEventListener('change', validateEmpresa);
+            empresa.addEventListener('blur', validateEmpresa);
+        }
+
+        form && form.addEventListener('submit', function(e){
+            validateNombre(true, true);
+            maskTelefono();
+            validateCorreo();
+            validateEst();
+            if (empresa){ if (!empresa.value){ empresa.classList.add('is-invalid','invalid'); } }
+            if (!form.checkValidity()){
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        });
+    });
+</script>
+</body>
+</html>

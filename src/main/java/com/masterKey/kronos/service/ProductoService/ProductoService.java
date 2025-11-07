@@ -9,4 +9,6 @@ public interface ProductoService {
 
     public List<Producto> findAll();
     Optional<Producto> findById(Long id);
+    Producto save(Producto producto);
+    void deleteById(Long id);
 }

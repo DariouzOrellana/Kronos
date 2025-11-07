@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments.html :: head}"></head>
+<body class="hold-transition sidebar-mini layout-fixed">
+<div class="wrapper">
+    <div th:replace="~{fragments.html :: menu}"></div>
+
+    <div class="content-wrapper">
+        <div class="content-header">
+            <div class="container-fluid">
+                <div class="row mb-2">
+                    <div class="col-sm-6">
+                        <h1 class="m-0" th:text="${title}">Editar Caja</h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <section class="content">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <form th:action="@{'/cajas/' + ${caja.id} + '/actualizar'}" th:object="${caja}" method="post" id="formCaja">
+                                    <div class="form-row">
+                                        <div class="form-group col-md-8">
+                                            <label for="descripcion">Descripción</label>
+                                            <input type="text" class="form-control" id="descripcion" name="descripcion" th:field="*{descripcion}" placeholder="Descripción" required>
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <label for="puntoVentaMh">Punto de venta MH</label>
+                                            <input type="text" class="form-control" id="puntoVentaMh" name="puntoVentaMh" th:field="*{puntoVentaMh}" placeholder="Ej. P001" pattern="P\d{3}" title="Formato requerido: P seguido de 3 dígitos (ej. P001)" maxlength="4" required>
+                                            <div class="invalid-feedback">Obligatorio. Formato requerido: P seguido de 3 dígitos (ej. P001).</div>
+                                            <div class="invalid-feedback d-block" th:if="${#fields.hasErrors('puntoVentaMh')}" th:errors="*{puntoVentaMh}"></div>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group col-md-6">
+                                            <label for="sucursalId">Sucursal</label>
+                                            <select class="form-control" id="sucursalId" name="sucursalId" required>
+                                                <option value="">-- Seleccione --</option>
+                                                <option th:each="s : ${sucursales}"
+                                                        th:value="${s.id}"
+                                                        th:text="${s.nombreSucursal}"
+                                                        th:selected="${caja.sucursal != null} ? ${s.id} == ${caja.sucursal.id} : false"></option>
+                                            </select>
+                                            <div class="invalid-feedback">Debe seleccionar una sucursal.</div>
+                                            <div class="invalid-feedback d-block" th:if="${sucursalError}" th:text="${sucursalError}"></div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <a th:href="@{/cajas}" class="btn btn-secondary">Cancelar</a>
+                                        <button type="submit" class="btn btn-primary">Actualizar</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <footer th:replace="~{fragments.html :: footer}"></footer>
+</div>
+<div th:replace="~{fragments.html :: scripts}"></div>
+<script>
+    document.addEventListener('DOMContentLoaded', function(){
+        const form = document.getElementById('formCaja');
+        const pv = document.getElementById('puntoVentaMh');
+        const suc = document.getElementById('sucursalId');
+        function validatePV(el){
+            if (!el) return;
+            let v = (el.value || '').toUpperCase().trim();
+            v = v.replace(/[^A-Z0-9]/g,'');
+            if (v.length > 4) v = v.slice(0,4);
+            el.value = v;
+            const ok = /^P\d{3}$/.test(v);
+            el.setCustomValidity(ok ? '' : (v.length === 0 ? 'Campo obligatorio' : 'Formato inválido. Use P001 (P y 3 dígitos).'));
+            el.classList.remove('invalid','is-invalid','valid','is-valid');
+            if (ok){
+                el.classList.add('valid','is-valid');
+            } else {
+                el.classList.add('invalid','is-invalid');
+            }
+        }
+        if (pv){
+            pv.addEventListener('input', function(){ validatePV(this); });
+            pv.addEventListener('blur', function(){ validatePV(this); });
+        }
+        if (suc){
+            function validateSuc(){
+                suc.classList.remove('is-valid','valid','is-invalid','invalid');
+                if (suc.value){
+                    suc.classList.add('is-valid','valid');
+                } else {
+                    suc.classList.add('is-invalid','invalid');
+                }
+            }
+            suc.addEventListener('change', validateSuc);
+            suc.addEventListener('blur', validateSuc);
+        }
+        form && form.addEventListener('submit', function(e){
+            validatePV(pv);
+            if (suc){ if (!suc.value){ suc.classList.add('is-invalid','invalid'); } }
+            if (!form.checkValidity()){
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        });
+    });
+</script>
+</body>
+</html>

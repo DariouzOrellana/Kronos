@@ -22,6 +22,11 @@ public class ClienteServiceImpl implements ClienteService {
     }
 
     @Override
+    public List<Cliente> findAllByEstado(Integer estado) {
+        return clienteRepository.findAllByEstado(estado);
+    }
+
+    @Override
     public Optional<Cliente> findById(Long id) {
         return clienteRepository.findById(id);
     }

@@ -4,18 +4,16 @@
 <body class="hold-transition sidebar-mini layout-fixed">
 <div class="wrapper">
     <div th:replace="~{fragments.html :: menu}"></div>
-
     <div class="content-wrapper">
         <div class="content-header">
             <div class="container-fluid">
                 <div class="row mb-2">
                     <div class="col-sm-6">
-                        <h1 class="m-0" th:text="${title}">Clientes</h1>
+                        <h1 class="m-0" th:text="${title}">Usuarios</h1>
                     </div>
                 </div>
             </div>
         </div>
-
         <section class="content">
             <div class="container-fluid">
                 <div class="row">
@@ -25,8 +23,8 @@
                                 <div class="d-flex align-items-center">
                                     <div class="mr-auto"></div>
                                     <div class="mx-auto">
-                                        <a th:href="@{/clientes/crear}" class="btn btn-primary">
-                                            <i class="fas fa-plus"></i> Nuevo cliente
+                                        <a th:href="@{/usuarios/crear}" class="btn btn-primary">
+                                            <i class="fas fa-plus"></i> Nuevo usuario
                                         </a>
                                     </div>
                                     <div class="ml-auto"></div>
@@ -36,50 +34,38 @@
 
                         <div class="card">
                             <div class="card-header d-flex justify-content-between align-items-center">
-                                <h3 class="card-title m-0">Listado de clientes</h3>
+                                <h3 class="card-title m-0">Listado de usuarios</h3>
                             </div>
                             <div class="card-body">
                                 <div>
                                     <style>
-                                        /* Compact icon buttons and vertical alignment */
                                         .btn-icon { padding: .2rem .35rem; line-height: 1; }
-                                        .table td, .table th { vertical-align: middle; }
+                                        .table td, .table th { vertical-align: middle; white-space: nowrap; }
                                     </style>
-                                    <table id="tablaClientes" class="table table-bordered table-striped w-100 nowrap" style="width:100%">
+                                    <table id="tablaUsuarios" class="table table-bordered table-striped w-100 nowrap" style="width:100%">
                                         <thead>
                                         <tr>
-                                            <th class="col-actions">Acciones</th>
-                                            <th class="col-id">ID</th>
-                                            <th>Estado</th>
-                                            <th>Nombre</th>
-                                            <th>DUI</th>
-                                            <th>NRC</th>
-                                            <th>NIT</th>
-                                            <th>Correo</th>
-                                            <th>Teléfono</th>
+                                            <th>Acciones</th>
+                                            <th>ID</th>
+                                            <th>Usuario</th>
+                                            <th>Rol</th>
+                                            <th>Caja</th>
                                         </tr>
                                         </thead>
                                         <tbody>
-                                        <tr th:each="c : ${clientes}">
-                                            <td class="col-actions">
-                                                <a th:href="@{'/clientes/' + ${c.id} + '/editar'}" class="btn btn-primary btn-icon" title="Editar" aria-label="Editar"><i class="fas fa-edit"></i></a>
-                                                <form th:action="@{'/clientes/' + ${c.id} + '/eliminar'}" method="post" class="js-delete-form d-inline-block ml-1">
+                                        <tr th:each="u : ${usuarios}">
+                                            <td>
+                                                <a th:href="@{'/usuarios/' + ${u.id} + '/editar'}" class="btn btn-primary btn-icon" title="Editar" aria-label="Editar"><i class="fas fa-edit"></i></a>
+                                                <form th:action="@{'/usuarios/' + ${u.id} + '/eliminar'}" method="post" class="js-delete-form d-inline-block ml-1">
                                                     <button type="submit" class="btn btn-danger btn-icon" title="Eliminar" aria-label="Eliminar">
                                                         <i class="fas fa-trash"></i>
                                                     </button>
                                                 </form>
                                             </td>
-                                            <td class="col-id" th:text="${c.id}"></td>
-                                            <td class="text-center">
-                                                <span th:class="${c.estado} == 1 ? 'badge badge-success' : 'badge badge-secondary'"
-                                                      th:text="${c.estado} == 1 ? 'Activo' : 'Inactivo'"></span>
-                                            </td>
-                                            <td th:text="${c.nombreCliente}"></td>
-                                            <td th:text="${c.dui}"></td>
-                                            <td th:text="${c.noRegistro}"></td>
-                                            <td th:text="${c.nit}"></td>
-                                            <td th:text="${c.correo}"></td>
-                                            <td th:text="${c.telefono}"></td>
+                                            <td th:text="${u.id}">1</td>
+                                            <td th:text="${u.username}">admin</td>
+                                            <td th:text="${u.rol != null ? (u.rol.nombreRol != null ? u.rol.nombreRol : u.rol.id) : ''}">ROL</td>
+                                            <td th:text="${u.caja != null ? (u.caja.descripcion != null ? u.caja.descripcion : u.caja.id) : ''}">CAJA</td>
                                         </tr>
                                         </tbody>
                                     </table>
@@ -92,18 +78,17 @@
             </div>
         </section>
     </div>
-
     <footer th:replace="~{fragments.html :: footer}"></footer>
 </div>
 <div th:replace="~{fragments.html :: scripts}"></div>
 <script>
     document.addEventListener('DOMContentLoaded', function(){
-        if (window.jQuery && $('#tablaClientes').length) {
+        if (window.jQuery && $('#tablaUsuarios').length) {
             const style = document.createElement('style');
             style.textContent = 'table.dataTable{table-layout:auto !important;}';
             document.head.appendChild(style);
 
-            const sel = '#tablaClientes';
+            const sel = '#tablaUsuarios';
             const table = $.fn.dataTable.isDataTable(sel)
                 ? $(sel).DataTable()
                 : $(sel).DataTable({
@@ -113,15 +98,17 @@
                     autoWidth: true,
                     language: { url: 'https://cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json' }
                 });
-            setTimeout(function(){ try{ table.columns.adjust(); }catch(e){} }, 0);
-            window.addEventListener('resize', function(){ try{ table.columns.adjust(); }catch(e){} });
+            function safeAdjust(){
+                try{ const c = table && table.table ? table.table().container() : null; if (c) { table.columns.adjust(); } }catch(e){}
+            }
+            setTimeout(safeAdjust, 0);
+            window.addEventListener('resize', safeAdjust);
         }
-        // Confirmación de eliminación con SweetAlert2
         $(document).on('submit', '.js-delete-form', function(e){
             e.preventDefault();
             const form = this;
             Swal.fire({
-                title: '¿Eliminar cliente?',
+                title: '¿Eliminar usuario?',
                 text: 'Esta acción no se puede deshacer',
                 icon: 'warning',
                 showCancelButton: true,

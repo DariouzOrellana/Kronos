@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments.html :: head}"></head>
+<body class="hold-transition sidebar-mini layout-fixed">
+<div class="wrapper">
+    <div th:replace="~{fragments.html :: menu}"></div>
+
+    <div class="content-wrapper">
+        <div class="content-header">
+            <div class="container-fluid">
+                <div class="row mb-2">
+                    <div class="col-sm-6">
+                        <h1 class="m-0" th:text="${title}">Editar Empresa</h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <section class="content">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <form th:action="@{'/empresas/' + ${empresa.id} + '/actualizar'}" th:object="${empresa}" method="post" id="formEmpresa">
+                                    <div class="form-row">
+                                        <div class="form-group col-md-3">
+                                            <label for="estado">Estado</label>
+                                            <select class="form-control" id="estado" name="estado" th:field="*{estado}">
+                                                <option th:value="1">Activo</option>
+                                                <option th:value="0">Inactivo</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group col-md-6">
+                                            <label for="nombreEmpresa">Nombre</label>
+                                            <input type="text" class="form-control" id="nombreEmpresa" name="nombreEmpresa" th:field="*{nombreEmpresa}" placeholder="Nombre de la empresa" required>
+                                            <div class="invalid-feedback">Obligatorio.</div>
+                                        </div>
+                                        <div class="form-group col-md-6">
+                                            <label for="nombreComercial">Nombre comercial</label>
+                                            <input type="text" class="form-control" id="nombreComercial" name="nombreComercial" th:field="*{nombreComercial}" placeholder="Nombre comercial">
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-group col-md-6">
+                                            <label for="representanteLegal">Representante Legal</label>
+                                            <input type="text" class="form-control" id="representanteLegal" name="representanteLegal" th:field="*{representanteLegal}" placeholder="Representante legal">
+                                        </div>
+                                        <div class="form-group col-md-3">
+                                            <label for="telefono">Teléfono</label>
+                                            <input type="text" class="form-control" id="telefono" name="telefono" th:field="*{telefono}" placeholder="0000-0000" pattern="\d{4}-\d{4}" title="Formato requerido: 0000-0000" maxlength="9">
+                                        </div>
+                                        <div class="form-group col-md-3">
+                                            <label for="correo">Correo</label>
+                                            <input type="email" class="form-control" id="correo" name="correo" th:field="*{correo}" placeholder="correo@dominio.com">
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-group col-md-3">
+                                            <label for="noRegistro">No. Registro</label>
+                                            <input type="text" class="form-control" id="noRegistro" name="noRegistro" th:field="*{noRegistro}" placeholder="0-0" pattern="^[0-9]+-[0-9]+$">
+                                        </div>
+                                        <div class="form-group col-md-3">
+                                            <label for="nit">NIT</label>
+                                            <input type="text" class="form-control" id="nit" name="nit" th:field="*{nit}" placeholder="0000-000000-000-0" pattern="\d{4}-\d{6}-\d{3}-\d">
+                                        </div>
+                                        <div class="form-group col-md-3">
+                                            <label for="dui">DUI</label>
+                                            <input type="text" class="form-control" id="dui" name="dui" th:field="*{dui}" placeholder="00000000-0" pattern="\d{8}-\d">
+                                        </div>
+                                        <div class="form-group col-md-3">
+                                            <label for="tipoContribuyenteId">Tipo Contribuyente</label>
+                                            <select class="form-control select2" id="tipoContribuyenteId" name="tipoContribuyenteId">
+                                                <option value="">-- Seleccione --</option>
+                                                <option th:each="t : ${tiposContribuyente}"
+                                                        th:value="${t.id}"
+                                                        th:text="${t.nombre}"
+                                                        th:selected="${empresa.tipoContribuyente != null} ? ${t.id} == ${empresa.tipoContribuyente.id} : false"></option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-group col-md-12">
+                                            <label for="actividadId">Actividad Económica</label>
+                                            <select class="form-control select2" id="actividadId" name="actividadId">
+                                                <option value="">-- Seleccione --</option>
+                                                <option th:each="a : ${actividades}"
+                                                        th:value="${a.id}"
+                                                        th:text="${a.nombreActividadEconomica}"
+                                                        th:selected="${empresa.actividadEconomica != null} ? ${a.id} == ${empresa.actividadEconomica.id} : false"></option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-group col-md-6">
+                                            <label for="departamentoId">Departamento</label>
+                                            <select class="form-control select2" id="departamentoId" name="departamentoId">
+                                                <option value="">-- Seleccione --</option>
+                                                <option th:each="d : ${departamentos}"
+                                                        th:value="${d.id}"
+                                                        th:text="${d.nombreDepartamento}"
+                                                        th:selected="${empresa.departamento != null} ? ${d.id} == ${empresa.departamento.id} : false"></option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group col-md-6">
+                                            <label for="municipioId">Municipio</label>
+                                            <select class="form-control select2" id="municipioId" name="municipioId">
+                                                <option value="">-- Seleccione --</option>
+                                                <option th:each="m : ${municipios}"
+                                                        th:value="${m.id}"
+                                                        th:text="${m.nombreMunicipio}"
+                                                        th:attr="data-depto=${m.departamento != null ? m.departamento.id : ''}"
+                                                        th:selected="${empresa.municipio != null} ? ${m.id} == ${empresa.municipio.id} : false"></option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-group col-md-8">
+                                            <label for="direccion">Dirección</label>
+                                            <textarea class="form-control" id="direccion" name="direccion" th:field="*{direccion}" rows="2" placeholder="Dirección"></textarea>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex justify-content-between">
+                                        <a th:href="@{/empresas}" class="btn btn-secondary">Cancelar</a>
+                                        <button type="submit" class="btn btn-primary">Actualizar</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <footer th:replace="~{fragments.html :: footer}"></footer>
+</div>
+<div th:replace="~{fragments.html :: scripts}"></div>
+<script>
+    document.addEventListener('DOMContentLoaded', function(){
+        const form = document.getElementById('formEmpresa');
+        const nombre = document.getElementById('nombreEmpresa');
+        const tel = document.getElementById('telefono');
+        const correo = document.getElementById('correo');
+        const dui = document.getElementById('dui');
+        const nit = document.getElementById('nit');
+        const nro = document.getElementById('noRegistro');
+        function toggleClasses(el, ok, hasVal){ el.classList.remove('is-valid','valid','is-invalid','invalid'); if(!hasVal) return; (ok?el.classList.add('is-valid','valid'):el.classList.add('is-invalid','invalid')); }
+        function validateNombre(force=false){ let v=(nombre.value||'').trim().toUpperCase(); nombre.value=v; if(force) nombre.dataset.touched='1'; const t=nombre.dataset.touched==='1'; const ok=v.length>0; toggleClasses(nombre, ok, t||force); nombre.setCustomValidity(ok?'':'Campo obligatorio'); }
+        function maskTelefono(){ let v=(tel.value||'').replace(/\D/g,'').slice(0,8); if(v.length>4) v=v.slice(0,4)+'-'+v.slice(4); tel.value=v; const ok=/^\d{4}-\d{4}$/.test(v); toggleClasses(tel, ok, v.length>0); tel.setCustomValidity(v.length===0?'':(ok?'':'Formato 0000-0000')); }
+        function validateCorreo(){ const v=(correo.value||'').trim(); const ok=correo.checkValidity(); toggleClasses(correo, ok, v.length>0); }
+        function onlyDigits(s){ return (s||'').replace(/\D+/g,''); }
+        function fmtDUI(d){ d = onlyDigits(d).slice(0,9); return d.length>8 ? d.slice(0,8)+'-'+d.slice(8) : d; }
+        function fmtNIT(d){ d = onlyDigits(d).slice(0,14); const a=d.slice(0,4),b=d.slice(4,10),c=d.slice(10,13),e=d.slice(13,14); return [a,b,c,e].filter(Boolean).join('-'); }
+        function sanitizeNoReg(el){ let v = (el.value||'').replace(/[^0-9-]/g,''); v = v.replace(/-+/g,'-'); const parts = v.split('-'); if (parts.length>2){ v = parts[0]+'-'+parts.slice(1).join(''); } el.value = v; }
+        nombre && nombre.addEventListener('input', function(){ nombre.dataset.touched='1'; validateNombre(false); });
+        nombre && nombre.addEventListener('blur', function(){ nombre.dataset.touched='1'; validateNombre(false); });
+        tel && tel.addEventListener('input', maskTelefono); tel && tel.addEventListener('blur', maskTelefono);
+        correo && correo.addEventListener('input', validateCorreo); correo && correo.addEventListener('blur', validateCorreo);
+        if (dui){ const h=function(){ this.dataset.touched='1'; this.value=fmtDUI(this.value); this.maxLength=10; toggleClasses(this, this.checkValidity(), this.value.length>0); }; dui.addEventListener('input', h); dui.addEventListener('blur', function(){ this.dataset.touched='1'; toggleClasses(this, this.checkValidity(), this.value.length>0); }); }
+        if (nit){ const h=function(){ this.dataset.touched='1'; this.value=fmtNIT(this.value); this.maxLength=17; toggleClasses(this, this.checkValidity(), this.value.length>0); }; nit.addEventListener('input', h); nit.addEventListener('blur', function(){ this.dataset.touched='1'; toggleClasses(this, this.checkValidity(), this.value.length>0); }); }
+        if (nro){ const h=function(){ this.dataset.touched='1'; sanitizeNoReg(this); toggleClasses(this, this.checkValidity(), this.value.length>0); }; nro.addEventListener('input', h); nro.addEventListener('blur', function(){ this.dataset.touched='1'; toggleClasses(this, this.checkValidity(), this.value.length>0); }); }
+        form && form.addEventListener('submit', function(e){ validateNombre(true); maskTelefono(); validateCorreo(); if(!form.checkValidity()){ e.preventDefault(); e.stopPropagation(); }});
+        if (window.jQuery) {
+            $('#actividadId, #departamentoId, #municipioId, #tipoContribuyenteId').select2({ width: '100%' });
+            function updateEstadoStyle(){
+                var v = ($('#estado').val()||'').toString();
+                var $el = $('#estado');
+                $el.removeClass('bg-success bg-secondary text-white');
+                if (v === '1') { $el.addClass('bg-success text-white'); }
+                else if (v === '0') { $el.addClass('bg-secondary text-white'); }
+            }
+            updateEstadoStyle();
+            $('#estado').on('change', updateEstadoStyle);
+            const $dep = $('#departamentoId');
+            const $mun = $('#municipioId');
+            const allMunOptions = Array.from($mun.find('option').not('[value=""]').clone());
+            function rebuildMunicipios(){
+                const depId = ($dep.val()||'').toString();
+                const current = ($mun.val()||'').toString();
+                $mun.empty();
+                $mun.append(new Option('-- Seleccione --',''));
+                allMunOptions.forEach(function(opt){
+                    const d = (opt.getAttribute('data-depto')||'').toString();
+                    if (!depId || d === depId){
+                        $mun.append(opt.cloneNode(true));
+                    }
+                });
+                if (current && $mun.find('option[value="'+current+'"]').length){
+                    $mun.val(current).trigger('change.select2');
+                } else {
+                    $mun.val('').trigger('change.select2');
+                }
+            }
+            // Inicial: construir según valor de departamento seleccionado
+            rebuildMunicipios();
+            $dep.on('change', rebuildMunicipios);
+        }
+    });
+</script>
+</body>
+</html>
