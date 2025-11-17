@@ -20,6 +20,17 @@
         /* Estilos de énfasis para totales */
         .total-amount { font-weight: 600; font-size: 1.05rem; background-color: #f8f9fa; }
         .totales-card .card-body .form-group label { font-weight: 600; }
+        /* Evitar interacción con Select2 cuando modal está abierto */
+        .modal-open .select2-container { pointer-events: none !important; z-index: 1 !important; }
+        /* Forzar ocultamiento del dropdown Select2 durante modal */
+        .modal-open .select2-container--open,
+        .modal-open .select2-container--open .select2-dropdown,
+        .modal-open .select2-dropdown { display: none !important; z-index: 1 !important; }
+        /* Alternativa extra mediante clase dedicada */
+        .s2-suppressed .select2-container { pointer-events: none !important; z-index: 1 !important; }
+        .s2-suppressed .select2-container--open,
+        .s2-suppressed .select2-container--open .select2-dropdown,
+        .s2-suppressed .select2-dropdown { display: none !important; z-index: 1 !important; }
     </style>
 
     <!-- Content Wrapper. Contains page content -->
@@ -94,11 +105,27 @@
                                         </div>
                                     </div>
 
+                                    <!-- Selección de venta base para Nota de Crédito -->
+                                    <div class="form-row" id="ncVentaSection" style="display:none;">
+                                        <div class="form-group col-12">
+                                            <label>Venta a la que aplica la Nota de Crédito</label>
+                                            <div class="input-group">
+                                                <input type="hidden" id="ventaIdNc" name="ventaIdNc" />
+                                                <input type="text" class="form-control" id="ventaNcResumen" placeholder="Ninguna seleccionada" readonly>
+                                                <div class="input-group-append">
+                                                    <button type="button" class="btn btn-outline-primary" id="btnSeleccionarVentaNc">Seleccionar</button>
+                                                    <button type="button" class="btn btn-outline-secondary" id="btnLimpiarVentaNc">Limpiar</button>
+                                                </div>
+                                            </div>
+                                            <small class="text-muted">Obligatorio para Nota de Crédito.</small>
+                                        </div>
+                                    </div>
+
                                     <!-- Datos de facturación del cliente -->
                                     <div class="form-row">
                                         <div class="form-group col-12 col-md-4">
                                             <label for="nombreFactura">Nombre en factura</label>
-                                            <input type="text" class="form-control" id="nombreFactura" name="nombre_factura" placeholder="Nombre para la factura" value="CONSUMIDOR FINAL" th:value="${defaultNombreFactura != null && !#strings.isEmpty(defaultNombreFactura) ? defaultNombreFactura : 'CONSUMIDOR FINAL'}">
+                                            <input type="text" class="form-control" id="nombreFactura" name="nombre_factura" placeholder="Nombre para la factura" th:value="${defaultNombreFactura}" value="CONSUMIDOR FINAL">
                                         </div>
                                         <div class="form-group col-12 col-md-4">
                                             <label for="tipoDocFactura">Tipo Doc.</label>
@@ -238,7 +265,39 @@
         <!-- /.content -->
     </div>
 
-
+    <!-- Modal: Ventas elegibles para Nota de Crédito -->
+    <div class="modal fade" id="modalVentasNc" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Seleccionar venta</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped" id="tablaVentasElegibles">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Fecha</th>
+                                    <th>Cliente</th>
+                                    <th>Tipo</th>
+                                    <th>Total</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <footer th:replace="~{fragments.html :: footer}"></footer>
 </div>
@@ -507,6 +566,7 @@
             const nombreFacturaEl = document.getElementById('nombreFactura');
             const clienteSel = document.getElementById('cliente');
             const totalVal = toNum(document.getElementById('total')?.value || '0');
+            const ventaIdNcSel = document.getElementById('ventaIdNc')?.value || '';
 
             // Si es factura: nombre de factura no debe ir vacío
             if (tipoNombreNorm.includes('factura')) {
@@ -527,6 +587,18 @@
                         Swal.fire({ icon: 'warning', title: 'Seleccione un cliente', text: 'Para Crédito Fiscal o Nota de Crédito debe seleccionar un cliente.' });
                     } else {
                         alert('Para Crédito Fiscal o Nota de Crédito debe seleccionar un cliente.');
+                    }
+                    return false;
+                }
+            }
+
+            // Si es Nota de Crédito: debe seleccionar venta base
+            if (tipoNombreNorm.includes('nota') && tipoNombreNorm.includes('credito')) {
+                if (!ventaIdNcSel) {
+                    if (window.Swal && typeof Swal.fire === 'function') {
+                        Swal.fire({ icon: 'warning', title: 'Seleccione una venta', text: 'Debe seleccionar la venta a la que aplica la Nota de Crédito.' });
+                    } else {
+                        alert('Debe seleccionar la venta a la que aplica la Nota de Crédito.');
                     }
                     return false;
                 }
@@ -582,6 +654,7 @@
                 tipo_doc_factura: document.getElementById('tipoDocFactura')?.value || '',
                 doc_factura: document.getElementById('docFactura')?.value || '',
                 correo: document.getElementById('correoFactura')?.value || '',
+                ventaIdNc: document.getElementById('ventaIdNc')?.value || null,
                 montos: {
                     subtotal: toNum(document.getElementById('subtotal')?.value || '0'),
                     iva: toNum(document.getElementById('iva')?.value || '0'),
@@ -649,17 +722,6 @@
                 logVentaPayload();
             });
         }
-
-        function setDefaultNombreFactura(){
-            const nf = document.getElementById('nombreFactura');
-            if (nf && (!nf.value || !nf.value.trim())) {
-                nf.value = 'CONSUMIDOR FINAL';
-            }
-        }
-        // Ejecutar inmediatamente por si el DOM ya está listo
-        setDefaultNombreFactura();
-        // Y también en DOMContentLoaded (para navegadores con bfcache o carga diferida)
-        document.addEventListener('DOMContentLoaded', setDefaultNombreFactura);
 
         // Forzar separador decimal con punto en campos marcados
         document.addEventListener('input', function(ev){
@@ -951,10 +1013,19 @@
         }
 
         // Bind cambios a los radios de tipoDocumento
+        function updateNcSectionVisibility(){
+            const tipo = getTipoDocumentoGeneralNombre();
+            const isNc = (typeof normalizeStr === 'function') ? normalizeStr(tipo).includes('nota') && normalizeStr(tipo).includes('credito') : (tipo || '').toLowerCase().includes('nota') && (tipo || '').toLowerCase().includes('credito');
+            const sec = document.getElementById('ncVentaSection');
+            if (!sec) return;
+            sec.style.display = isNc ? '' : 'none';
+        }
+
         document.querySelectorAll('input[name="tipoDocumentoId"]').forEach(r => {
             r.addEventListener('change', function(){
                 updateNombreFacturaByTipo();
                 applyRetencionIfNeeded();
+                updateNcSectionVisibility();
             });
         });
 
@@ -983,6 +1054,138 @@
         })();
         // Si hay un cliente preseleccionado, aplicar reglas en modo silencioso
         handleClienteChange(true);
+
+        // Lógica de Modal de ventas elegibles NC
+        const btnSelNc = document.getElementById('btnSeleccionarVentaNc');
+        const btnClrNc = document.getElementById('btnLimpiarVentaNc');
+        function cargarVentasElegibles(){
+            const clienteId = document.getElementById('cliente')?.value || '';
+            const url = clienteId ? `/ventas/elegibles-nota-credito?clienteId=${encodeURIComponent(clienteId)}` : '/ventas/elegibles-nota-credito';
+            return fetch(url).then(r => r.json());
+        }
+        function fillTablaElegibles(data){
+            const tbody = document.querySelector('#tablaVentasElegibles tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            (data || []).forEach(v => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${v.id}</td>
+                    <td>${(v.fecha || '').toString().replace('T',' ')}</td>
+                    <td>${v.clienteNombre || ''}</td>
+                    <td>${v.tipoDocumento || ''}</td>
+                    <td class="text-right">${v.total}</td>
+                    <td><button type="button" class="btn btn-sm btn-primary seleccionar-venta-nc" data-id="${v.id}">Elegir</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+        function bindSelectButtons(){
+            document.querySelectorAll('.seleccionar-venta-nc').forEach(btn => {
+                btn.addEventListener('click', function(){
+                    const id = this.getAttribute('data-id');
+                    const row = this.closest('tr');
+                    const resumen = `ID ${id} - ${row.children[1].textContent} - ${row.children[2].textContent} - ${row.children[4].textContent}`;
+                    const idIn = document.getElementById('ventaIdNc');
+                    const resumenIn = document.getElementById('ventaNcResumen');
+                    if (idIn) idIn.value = id;
+                    if (resumenIn) resumenIn.value = resumen;
+                    // Prefill datos desde la venta seleccionada
+                    prefillNotaCreditoFromVenta(id).catch(err => console.error('Prefill NC error', err));
+                    if (window.jQuery) { $('#modalVentasNc').modal('hide'); }
+                });
+            });
+        }
+        if (btnSelNc) {
+            btnSelNc.addEventListener('click', function(){
+                // Cerrar cualquier dropdown de Select2 antes de abrir modal (solo si está inicializado)
+                if (window.jQuery && $.fn && $.fn.select2) {
+                    $('select.select2').each(function(){
+                        var $el = $(this);
+                        if ($el.data('select2')) { $el.select2('close'); }
+                    });
+                }
+                cargarVentasElegibles().then(data => { fillTablaElegibles(data); bindSelectButtons(); });
+                if (window.jQuery) { $('#modalVentasNc').modal('show'); }
+            });
+        }
+        // Asegurar cierre select2 cuando se abre/cierra el modal (adicional)
+        if (window.jQuery) {
+            $('#modalVentasNc').on('show.bs.modal', function(){
+                if ($.fn && $.fn.select2) {
+                    $('select.select2').each(function(){
+                        var $el = $(this);
+                        if ($el.data('select2')) { $el.select2('close'); }
+                    });
+                }
+                $('.select2-hidden-accessible').blur();
+                // Forzar supresión visual
+                $('body').addClass('s2-suppressed');
+                // Deshabilitar selects select2 temporalmente
+                $('select.select2').prop('disabled', true);
+            });
+            $('#modalVentasNc').on('hidden.bs.modal', function(){
+                $('body').removeClass('s2-suppressed');
+                // Rehabilitar selects select2
+                $('select.select2').prop('disabled', false);
+                if ($.fn && $.fn.select2) {
+                    $('select.select2').each(function(){
+                        var $el = $(this);
+                        if ($el.data('select2')) { $el.select2(); }
+                    });
+                }
+            });
+        }
+        if (btnClrNc) {
+            btnClrNc.addEventListener('click', function(){
+                const idIn = document.getElementById('ventaIdNc');
+                const resumenIn = document.getElementById('ventaNcResumen');
+                if (idIn) idIn.value = '';
+                if (resumenIn) resumenIn.value = '';
+            });
+        }
+        updateNcSectionVisibility();
+
+        // Helper: prefill campos e items desde una venta
+        async function prefillNotaCreditoFromVenta(ventaId){
+            if (!ventaId) return;
+            const resp = await fetch(`/ventas/${ventaId}`);
+            if (!resp.ok) return;
+            const data = await resp.json();
+            // Set cliente (si existe en la lista)
+            const clienteSel = document.getElementById('cliente');
+            if (clienteSel && data.cliente && data.cliente.id){
+                clienteSel.value = String(data.cliente.id);
+                if (window.jQuery && $.fn && $.fn.select2) { $(clienteSel).val(String(data.cliente.id)).trigger('change'); }
+                else { clienteSel.dispatchEvent(new Event('change')); }
+            }
+            // Campos de facturación
+            const nombreFacturaEl = document.getElementById('nombreFactura');
+            if (nombreFacturaEl) { nombreFacturaEl.value = data.nombreFactura || ''; nombreFacturaEl.dataset.fixed = 'true'; }
+            const tipoDocSel = document.getElementById('tipoDocFactura');
+            if (tipoDocSel) {
+                const t = data.tipoDocFactura || '';
+                tipoDocSel.value = t;
+                if (window.jQuery && $.fn && $.fn.select2) { $(tipoDocSel).val(t).trigger('change'); }
+            }
+            const docFacturaInput = document.getElementById('docFactura');
+            if (docFacturaInput) { docFacturaInput.value = data.docFactura || ''; }
+            const correoEl = document.getElementById('correoFactura');
+            if (correoEl) { correoEl.value = data.correo || ''; }
+            // Items: limpiar y agregar
+            const tbody = document.querySelector('#tablaItems tbody');
+            if (tbody) { tbody.innerHTML = ''; }
+            const detalles = Array.isArray(data.detalles) ? data.detalles : [];
+            detalles.forEach(d => {
+                const desc = d.descripcion || '';
+                const qty = Number(d.cantidad || 0);
+                const pu = Number(d.precioUnitario || 0);
+                const pid = d.productoId || null;
+                addItemRowWithValues(desc, isNaN(qty) ? 0 : qty, isNaN(pu) ? 0 : pu, pid);
+            });
+            // Recalcular totales
+            recalcItemsSubtotal();
+        }
     });
 </script>
 </body>

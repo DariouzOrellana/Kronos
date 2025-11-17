@@ -1,6 +1,9 @@
 package com.masterKey.kronos.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.masterKey.kronos.model.*;
+import com.masterKey.kronos.service.DteHelper;
+import com.masterKey.kronos.service.JsonHelper;
 import com.masterKey.kronos.service.ParametroService.ParametroService;
 import com.masterKey.kronos.service.ProductoService.ProductoService;
 import com.masterKey.kronos.service.VentaService.VentaService;
@@ -35,6 +38,8 @@ public class VentaController extends BaseController{
     private final VentaDetalleService ventaDetalleService;
     private final ParametroService parametroService;
     private final TipoInvalidacionService tipoInvalidacionService;
+    private final JsonHelper jsonHelper;
+    private final DteHelper dteHelper;
 
     @Autowired
     public VentaController(VentaService ventaService,
@@ -44,7 +49,9 @@ public class VentaController extends BaseController{
                            ProductoService productoService,
                            VentaDetalleService ventaDetalleService,
                            ParametroService parametroService,
-                           TipoInvalidacionService tipoInvalidacionService) {
+                           TipoInvalidacionService tipoInvalidacionService,
+                           JsonHelper jsonHelper,
+                           DteHelper dteHelper) {
         this.ventaService = ventaService;
         this.clienteService = clienteService;
         this.tipoDocumentoService = tipoDocumentoService;
@@ -53,6 +60,8 @@ public class VentaController extends BaseController{
         this.ventaDetalleService = ventaDetalleService;
         this.parametroService = parametroService;
         this.tipoInvalidacionService = tipoInvalidacionService;
+        this.jsonHelper = jsonHelper;
+        this.dteHelper = dteHelper;
     }
 
     @GetMapping
@@ -70,6 +79,16 @@ public class VentaController extends BaseController{
         model.addAttribute("ventas", ventaService.findAllByFechaBetween(desde, hasta));
         model.addAttribute("tipoInvalidacion", tipoInvalidacionService.findAll());
         return "ventas/ver_ventas";
+    }
+
+    @GetMapping("/pruebitas")
+    @ResponseBody
+    public String verPruebitas() throws JsonProcessingException {
+        dteHelper.setearCodigoGeneracion(13L);
+        dteHelper.setearNumeroControl(13L);
+        String json = jsonHelper.generarJsonNc(13L);
+
+        return json;
     }
 
     @GetMapping("/crear")
@@ -126,6 +145,8 @@ public class VentaController extends BaseController{
         String tipoDocFactura = asString(payload.get("tipo_doc_factura"));
         String docFactura = asString(payload.get("doc_factura"));
         String correo = asString(payload.get("correo"));
+        // Para nota de crédito: venta referenciada
+        String ventaIdNcStr = asString(payload.get("ventaIdNc"));
 
         // Montos
         @SuppressWarnings("unchecked")
@@ -172,16 +193,23 @@ public class VentaController extends BaseController{
         venta.setCliente(cliente);
         venta.setTipoDocumento(tipoDocOpt.get());
         venta.setUsuario((Usuario) usrObj);
-        venta.setNombreFactura(nombreFactura);
-        venta.setTipoDocFactura(tipoDocFactura);
-        venta.setDocFactura(docFactura);
-        venta.setCorreo(correo);
+        venta.setNombreFactura(nombreFactura.isEmpty() ? "CONSUMIDOR FINAL" : nombreFactura);
+        venta.setTipoDocFactura(tipoDocFactura.isEmpty() ? null: tipoDocFactura);
+        venta.setDocFactura(docFactura.isEmpty() ? null: docFactura );
+        venta.setCorreo(correo.isEmpty() ? null: correo);
         venta.setSubtotal(subtotal);
         venta.setIva(iva);
         venta.setDescuento(descuento);
         venta.setRetencion(retencion);
         venta.setPercepcion(percepcion);
         venta.setTotal(total);
+
+        // Si viene ventaIdNc en payload, setearlo
+        Long ventaIdNcLong = parseLongSafe(ventaIdNcStr);
+        if (ventaIdNcLong != null) {
+            venta.setVentaIdNc(BigDecimal.valueOf(ventaIdNcLong));
+
+        }
 
         // Persistir Venta primero (para obtener ID)
         venta = ventaService.save(venta);
@@ -227,6 +255,67 @@ public class VentaController extends BaseController{
         res.put("message", "Venta guardada exitosamente");
         res.put("ventaId", venta.getId());
         return ResponseEntity.ok(res);
+    }
+
+    @GetMapping("/elegibles-nota-credito")
+    @ResponseBody
+    public ResponseEntity<?> ventasElegiblesNotaCredito(@RequestParam(value = "clienteId", required = false) Long clienteId) {
+        List<Venta> ventas = (clienteId != null)
+                ? ventaService.findElegiblesNotaCreditoDteByCliente(clienteId)
+                : ventaService.findElegiblesNotaCreditoDte();
+
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Venta v : ventas) {
+            Map<String, Object> m = new HashMap<>();
+            m.put("id", v.getId());
+            m.put("fecha", v.getFecha());
+            m.put("total", v.getTotal());
+            m.put("clienteNombre", v.getCliente() != null ? v.getCliente().getNombreCliente() : null);
+            m.put("tipoDocumento", v.getTipoDocumento() != null ? v.getTipoDocumento().getNombre() : null);
+            out.add(m);
+        }
+        return ResponseEntity.ok(out);
+    }
+
+    @GetMapping("/{id}")
+    @ResponseBody
+    public ResponseEntity<?> obtenerVenta(@PathVariable("id") Long id) {
+        Venta v = ventaService.findById(id);
+        if (v == null) {
+            return ResponseEntity.notFound().build();
+        }
+        Map<String, Object> out = new HashMap<>();
+        out.put("id", v.getId());
+        out.put("fecha", v.getFecha());
+        out.put("total", v.getTotal());
+        out.put("subtotal", v.getSubtotal());
+        out.put("iva", v.getIva());
+        out.put("retencion", v.getRetencion());
+        out.put("percepcion", v.getPercepcion());
+        out.put("nombreFactura", v.getNombreFactura());
+        out.put("tipoDocFactura", v.getTipoDocFactura());
+        out.put("docFactura", v.getDocFactura());
+        out.put("correo", v.getCorreo());
+        Map<String, Object> cliente = new HashMap<>();
+        if (v.getCliente() != null) {
+            cliente.put("id", v.getCliente().getId());
+            cliente.put("nombre", v.getCliente().getNombreCliente());
+        }
+        out.put("cliente", cliente);
+        List<Map<String, Object>> detalles = new ArrayList<>();
+        if (v.getDetalles() != null) {
+            for (VentaDetalle d : v.getDetalles()) {
+                Map<String, Object> md = new HashMap<>();
+                md.put("productoId", d.getProducto() != null ? d.getProducto().getId() : null);
+                md.put("descripcion", d.getProducto() != null ? d.getProducto().getDescripcion() : "");
+                md.put("cantidad", d.getCantidad());
+                md.put("precioUnitario", d.getPrecioUnitario());
+                md.put("total", d.getTotalLinea());
+                detalles.add(md);
+            }
+        }
+        out.put("detalles", detalles);
+        return ResponseEntity.ok(out);
     }
 
     // Helpers de conversión y parsing

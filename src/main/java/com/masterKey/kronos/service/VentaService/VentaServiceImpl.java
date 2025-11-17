@@ -5,7 +5,6 @@ import com.masterKey.kronos.repository.VentaRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.List;
 
 @Service
@@ -39,6 +38,26 @@ public class VentaServiceImpl implements VentaService{
     @Override
     public List<Venta> findByIdIn(List<Long> ids) {
         return ventaRepository.findByIdIn(ids);
+    }
+
+    @Override
+    public List<Venta> findElegiblesNotaCredito() {
+        return ventaRepository.findByVentaIdNcIsNullOrderByFechaDesc();
+    }
+
+    @Override
+    public List<Venta> findElegiblesNotaCreditoByCliente(Long clienteId) {
+        return ventaRepository.findByVentaIdNcIsNullAndCliente_IdOrderByFechaDesc(clienteId);
+    }
+
+    @Override
+    public List<Venta> findElegiblesNotaCreditoDte() {
+        return ventaRepository.findByVentaIdNcIsNullAndTipoDocumento_IdAndSelloMhIsNotNullOrderByFechaDesc("03");
+    }
+
+    @Override
+    public List<Venta> findElegiblesNotaCreditoDteByCliente(Long clienteId) {
+        return ventaRepository.findByVentaIdNcIsNullAndTipoDocumento_IdAndSelloMhIsNotNullAndCliente_IdOrderByFechaDesc("03", clienteId);
     }
 
 }

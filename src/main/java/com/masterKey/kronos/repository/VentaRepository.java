@@ -11,4 +11,8 @@ public interface VentaRepository extends JpaRepository<Venta, Long> {
     List<Venta> findAllByFechaBetween(LocalDateTime desde, LocalDateTime hasta);
     List<Venta> findByContingenciaOrderByFechaDesc(Integer contingencia);
     List<Venta> findByIdIn(List<Long> ids);
+    List<Venta> findByVentaIdNcIsNullOrderByFechaDesc();
+    List<Venta> findByVentaIdNcIsNullAndCliente_IdOrderByFechaDesc(Long clienteId);
+    List<Venta> findByVentaIdNcIsNullAndTipoDocumento_IdAndSelloMhIsNotNullOrderByFechaDesc(String tipoDocumentoId);
+    List<Venta> findByVentaIdNcIsNullAndTipoDocumento_IdAndSelloMhIsNotNullAndCliente_IdOrderByFechaDesc(String tipoDocumentoId, Long clienteId);
 }

@@ -12,5 +12,9 @@ public interface VentaService {
     public List<Venta> findByContingencia(Integer contingencia);
     public List<Venta> findByIdIn(List<Long> ids);
     public Venta findById(Long id);
+    public List<Venta> findElegiblesNotaCredito();
+    public List<Venta> findElegiblesNotaCreditoByCliente(Long clienteId);
+    public List<Venta> findElegiblesNotaCreditoDte();
+    public List<Venta> findElegiblesNotaCreditoDteByCliente(Long clienteId);
 
 }
