@@ -70,15 +70,19 @@
                                         <tbody>
                                             <tr th:each="c : ${contingencias}">
                                                 <td class="text-nowrap">
-                                                    <a th:if="${c.selloContingencia == null or #strings.isEmpty(c.selloContingencia)}"
-                                                       th:href="@{|/contingencias/${c.id}/enviar|}"
-                                                       class="btn btn-warning btn-sm mr-1" title="Enviar">
-                                                        <i class="fas fa-paper-plane"></i>
-                                                    </a>
+
                                                     <a th:href="@{|/contingencias/${c.id}|}"
                                                        class="btn btn-secondary btn-sm" title="Ingresar">
                                                         <i class="fas fa-external-link-alt"></i>
                                                     </a>
+                                                    <button
+                                                            th:if="${c == null or c.selloContingencia == null or #strings.isEmpty(c.selloContingencia)}"
+                                                            class="btn btn-warning btn-sm enviarContingencia"
+                                                            th:attr="data-contingencia-id=${c.id}"
+                                                    >
+
+                                                        <i class="fas fa-paper-plane"></i>
+                                                    </button>
                                                 </td>
                                                 <td>
                                                     <span th:classappend="${(c.selloContingencia == null or #strings.isEmpty(c.selloContingencia))} ? 'badge badge-secondary' : 'badge badge-success'"
@@ -110,6 +114,78 @@
 </div>
 <div th:replace="~{fragments.html :: scripts}"></div>
 <script>
+    $(".enviarContingencia").click(function () {
+        const contingenciaId = $(this).data('contingencia-id');
+        alert("Enviando...");
+        enviarDteContingencia(contingenciaId);
+    });
+
+    async function enviarDteContingencia(idContingencia) {
+        try {
+            Swal.fire({
+                icon: 'info',
+                title: 'Procesando...',
+                text: 'Por favor espere',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            const resp = await fetch("/contingencias/" + idContingencia + "/procesarDte", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (!resp.ok) {
+                throw new Error('Error ' + resp.status);
+            }
+
+            const data = await resp.json();
+            Swal.close();
+
+            if (data.ok) {
+
+                if (data.respuestaMh.estado === "PROCESADO") {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Contingencia procesada',
+                        text: 'Proceder a procesar las ventas en contingencia'
+                    }).then(() => {
+                        window.location.reload();
+                    });
+
+                } else {
+                    const observaciones = (data.respuestaMh.observaciones || []).join("<br>");
+                    const mensaje = data.respuestaMh.mensaje || '';
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Contingencia no procesada',
+                        html: `<b>Mensaje MH:</b> ${mensaje}<br><br><b>Observaciones:</b><br>${observaciones || 'Sin observaciones'}`
+                    });
+
+                }
+
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'No se pudo anular',
+                    text: data.message || 'Error desconocido'
+                });
+            }
+
+        } catch (e) {
+            Swal.close();
+            Swal.fire({
+                icon: 'error',
+                title: 'Error de red al anular',
+                text: e.message || ''
+            });
+        }
+    }
+
+
     document.addEventListener('DOMContentLoaded', function(){
         if (window.jQuery && $('#tablaContingencias').length) {
             const style = document.createElement('style');

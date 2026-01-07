@@ -100,7 +100,7 @@
     <aside class="main-sidebar sidebar-dark-primary elevation-4">
         <!-- Brand Logo -->
         <a href="./home" class="brand-link">
-            <img th:src="@{/img/key2.png}" alt="Bistro Logo" class="brand-image img-circle elevation-3" style="opacity: .8">
+            <img th:src="@{/img/master_key.png}" alt="Logo" class="brand-image img-circle elevation-3" style="opacity: .8">
             <span class="brand-text font-weight-light">Master Key DTE</span>
         </a>
 
@@ -160,7 +160,7 @@
                                 </li>
                             </ul>
                         </li>
-                        <li class="nav-item">
+                        <li class="nav-item" th:if="${userAuth.rol.nombreRol == 'ADMIN'}">
                             <a href="#" class="nav-link">
                                 <i class="fas fa-cogs"></i>
                                 <p>

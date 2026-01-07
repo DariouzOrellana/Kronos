@@ -39,8 +39,12 @@ public class SecurityConfig {
     ) throws Exception {
         http.csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authz -> authz
-                        .requestMatchers("/login", "/public/**", "/css/**", "/js/**", "/images/**").permitAll()
-                        .requestMatchers("/ventas/**").hasAnyRole("USUARIO", "ADMIN")
+                        .requestMatchers("/login",
+                                "/public/**",
+                                "/css/**",
+                                "/js/**",
+                                "/img/**",
+                                "/plugins/**").permitAll()
                         .requestMatchers("/mantenimiento/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )

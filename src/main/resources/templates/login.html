@@ -1,44 +1,259 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Iniciar sesión</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="icon" type="image/x-icon" th:href="@{/img/key.png}">
+    <title>MasterKey - Login</title>
     <style>
-        body { font-family: Arial, sans-serif; background: #f5f5f7; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .card { background: white; padding: 28px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); width: 360px; }
-        h1 { margin: 0 0 16px; font-size: 22px; }
-        .field { margin-bottom: 14px; }
-        label { display: block; margin-bottom: 6px; color: #333; font-weight: 600; }
-        input { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
-        .btn { width: 100%; padding: 10px 12px; background: #0052cc; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; }
-        .btn:hover { background: #003d99; }
-        .alert { padding: 10px 12px; border-radius: 8px; margin-bottom: 12px; font-size: 13px; }
-        .alert-error { background: #ffe6e6; color: #a10000; }
-        .alert-info { background: #e6f0ff; color: #003d99; }
-        .helper { color: #666; font-size: 12px; margin-top: 8px; }
+        @import url("https://fonts.googleapis.com/css2?family=Open+Sans:wght@200;300;400;500;600;700&display=swap");
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Open Sans", sans-serif;
+        }
+
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            width: 100%;
+            padding: 0 10px;
+        }
+
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /* Añadimos un gradiente lineal antes de la imagen para oscurecerla */
+            background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url("https://img.freepik.com/free-photo/antique-keys_93675-129554.jpg");
+            background-position: center;
+            background-size: cover;
+            z-index: -1; /* Asegura que se mantenga al fondo */
+        }
+
+        .wrapper {
+            width: 400px;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(9px);
+            -webkit-backdrop-filter: blur(9px);
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        h2 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+
+        .input-field {
+            position: relative;
+            border-bottom: 2px solid #ccc;
+            margin: 15px 0;
+        }
+
+        .input-field label {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            transform: translateY(-50%);
+            color: #fff;
+            font-size: 16px;
+            pointer-events: none;
+            transition: 0.15s ease;
+        }
+
+        .input-field input {
+            width: 100%;
+            height: 40px;
+            background: transparent;
+            border: none;
+            outline: none;
+            font-size: 16px;
+            color: #fff;
+        }
+
+        .input-field input:focus~label,
+        .input-field input:valid~label {
+            font-size: 0.8rem;
+            top: 10px;
+            transform: translateY(-120%);
+        }
+
+        .forget {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 25px 0 35px 0;
+            color: #fff;
+        }
+
+        #remember {
+            accent-color: #fff;
+        }
+
+        .forget label {
+            display: flex;
+            align-items: center;
+        }
+
+        .forget label p {
+            margin-left: 8px;
+        }
+
+        .wrapper a {
+            color: #efefef;
+            text-decoration: none;
+        }
+
+        .wrapper a:hover {
+            text-decoration: underline;
+        }
+
+        button {
+            background: #fff;
+            color: #000;
+            font-weight: 600;
+            border: none;
+            padding: 12px 20px;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 16px;
+            border: 2px solid transparent;
+            transition: 0.3s ease;
+        }
+
+        button:hover {
+            color: #fff;
+            border-color: #fff;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .register {
+            text-align: center;
+            margin-top: 30px;
+            color: #fff;
+        }
+        /* Estilos para el nuevo contenedor del logo */
+        .logo-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px; /* Espacio entre el logo y los inputs */
+        }
+
+        .logo {
+            max-width: 150px;    /* Ajusta este ancho según tu logo */
+            height: auto;        /* Mantiene la proporción */
+            filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.2)); /* Opcional: un ligero brillo */
+        }
+        /* ===== ALERTAS ===== */
+        .alert {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            text-align: left;
+            animation: fadeIn 0.3s ease;
+            backdrop-filter: blur(6px);
+        }
+
+        /* Texto */
+        .alert p {
+            margin: 0;
+            color: #fff;
+        }
+
+        /* Icono */
+        .alert span {
+            font-size: 18px;
+        }
+
+        /* Error */
+        .alert-error {
+            background: rgba(220, 53, 69, 0.25);
+            border: 1px solid rgba(220, 53, 69, 0.6);
+        }
+
+        /* Info / logout */
+        .alert-info {
+            background: rgba(13, 110, 253, 0.25);
+            border: 1px solid rgba(13, 110, 253, 0.6);
+        }
+
+        /* Animación */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-5px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .company-name {
+            margin-top: 10px;
+            font-size: 1.6rem;
+            font-weight: 600;
+            color: #fff;
+            letter-spacing: 1px;
+            /*text-transform: uppercase;*/
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+        }
+
+
     </style>
 </head>
 <body>
-<div class="card">
-    <h1>Iniciar sesión</h1>
+<div class="wrapper">
 
-    <div th:if="${error}" class="alert alert-error" th:text="${error}">Credenciales inválidas</div>
-    <div th:if="${logout}" class="alert alert-info">Sesión cerrada correctamente</div>
-
+        <div class="logo-container">
+            <img th:src="@{/img/master_key.png}" alt="Logo Cerrajería" class="logo">
+            <h1 class="company-name">MasterKey DTE</h1>
+        </div>
     <form th:action="@{/perform_login}" method="post">
-        <div class="field">
-            <label for="username">Usuario</label>
-            <input type="text" id="username" name="username" autocomplete="username" required>
+
+        <div th:if="${error}" class="alert alert-error">
+            <span>❌</span>
+            <p th:text="${error}">Credenciales inválidas</p>
         </div>
-        <div class="field">
-            <label for="password">Contraseña</label>
-            <input type="password" id="password" name="password" autocomplete="current-password" required>
+
+        <div th:if="${logout}" class="alert alert-info">
+            <span>ℹ️</span>
+            <p>Sesión cerrada correctamente</p>
         </div>
-        <button type="submit" class="btn">Acceder</button>
-        <div class="helper">Si olvidaste tu contraseña, contacta al administrador.</div>
+
+        <div class="input-field">
+            <input type="text" id="username" name="username" required>
+            <label>Usuario</label>
+        </div>
+
+        <div class="input-field">
+            <input type="password" id="password" name="password" required>
+            <label>Contraseña</label>
+        </div>
+
+        <button type="submit">Iniciar sesión</button>
     </form>
+
 </div>
 </body>
 </html>

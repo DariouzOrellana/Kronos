@@ -4,8 +4,10 @@ import com.masterKey.kronos.model.Venta;
 import com.masterKey.kronos.repository.VentaRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class VentaServiceImpl implements VentaService{
@@ -32,7 +34,7 @@ public class VentaServiceImpl implements VentaService{
 
     @Override
     public List<Venta> findByContingencia(Integer contingencia){
-        return ventaRepository.findByContingenciaOrderByFechaDesc(contingencia);
+        return ventaRepository.traerContingencias(contingencia);
     }
 
     @Override
@@ -52,8 +54,64 @@ public class VentaServiceImpl implements VentaService{
 
     @Override
     public List<Venta> findElegiblesNotaCreditoDte() {
-        return ventaRepository.findByVentaIdNcIsNullAndTipoDocumento_IdAndSelloMhIsNotNullOrderByFechaDesc("03");
+        return ventaRepository.traerCcfParaNc("03");
     }
+
+    @Override
+    public Optional<Venta> findByCodigoGeneracionAndFecha(String codigoGeneracion, LocalDate fecha){
+        return ventaRepository.findByCodigoGeneracionAndFecha(codigoGeneracion, fecha);
+    }
+
+    @Override
+    public java.math.BigDecimal sumTotalByFechaBetween(java.time.LocalDateTime desde, java.time.LocalDateTime hasta){
+        return ventaRepository.sumTotalByFechaBetween(desde, hasta);
+    }
+
+    @Override
+    public java.util.List<Object[]> sumTotalGroupByTipoBetween(java.time.LocalDateTime desde, java.time.LocalDateTime hasta){
+        return ventaRepository.sumTotalGroupByTipoBetween(desde, hasta);
+    }
+
+    @Override
+    public Long countByFechaBetween(java.time.LocalDateTime desde, java.time.LocalDateTime hasta){
+        return ventaRepository.countByFechaBetween(desde, hasta);
+    }
+
+    @Override
+    public Long countByFechaBetweenAndSelloMhIsNull(java.time.LocalDateTime desde, java.time.LocalDateTime hasta){
+        return ventaRepository.countByFechaBetweenAndSelloMhIsNull(desde, hasta);
+    }
+
+    @Override
+    public java.util.List<Object[]> ventasPorClienteBetween(java.time.LocalDateTime desde, java.time.LocalDateTime hasta){
+        return ventaRepository.ventasPorClienteBetween(desde, hasta);
+    }
+
+    @Override
+    public Long countByFechaBetweenAndContingencia(java.time.LocalDateTime desde, java.time.LocalDateTime hasta){
+        return ventaRepository.countByFechaBetweenAndContingencia(desde, hasta);
+    }
+
+    @Override
+    public java.util.List<Object[]> countGroupByTipoBetween(java.time.LocalDateTime desde, java.time.LocalDateTime hasta){
+        return ventaRepository.countGroupByTipoBetween(desde, hasta);
+    }
+
+    @Override
+    public java.util.List<com.masterKey.kronos.model.Venta> findByUsuario_IdAndFechaBetween(Long usuarioId, java.time.LocalDateTime desde, java.time.LocalDateTime hasta){
+        return ventaRepository.findByUsuario_IdAndFechaBetween(usuarioId, desde, hasta);
+    }
+
+    @Override
+    public java.util.List<Object[]> sumTotalGroupByUsuarioBetween(java.time.LocalDateTime desde, java.time.LocalDateTime hasta){
+        return ventaRepository.sumTotalGroupByUsuarioBetween(desde, hasta);
+    }
+
+    @Override
+    public java.util.List<Object[]> countGroupByUsuarioBetween(java.time.LocalDateTime desde, java.time.LocalDateTime hasta){
+        return ventaRepository.countGroupByUsuarioBetween(desde, hasta);
+    }
+
 
     @Override
     public List<Venta> findElegiblesNotaCreditoDteByCliente(Long clienteId) {

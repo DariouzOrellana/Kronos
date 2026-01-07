@@ -1,6 +1,7 @@
 package com.masterKey.kronos.service.HelperService;
 
 import com.masterKey.kronos.model.Parametro;
+import com.masterKey.kronos.service.DteHelper;
 import com.masterKey.kronos.service.ParametroService.ParametroService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -13,11 +14,14 @@ import java.util.UUID;
 @Service
 public class HelperServiceImpl implements HelperService {
 
-    private ParametroService parametroService;
+    private final ParametroService parametroService;
+    private final DteHelper dteHelper;
 
     @Autowired
-    public HelperServiceImpl(ParametroService parametroService) {
+    public HelperServiceImpl(ParametroService parametroService,
+                             DteHelper dteHelper) {
         this.parametroService = parametroService;
+        this.dteHelper = dteHelper;
     }
 
     @Override
@@ -57,7 +61,7 @@ public class HelperServiceImpl implements HelperService {
 
                     if (transcurrido.compareTo(duracion) > 0) {
                         System.out.println("⏰ Ha pasado más del tiempo configurado. Actualizando tokenMH...");
-                        String nuevoToken = "PRUEBITAS"; // Mh.obtenerToken()
+                        String nuevoToken = dteHelper.obtenerTokenMH();
                         p.setValor(nuevoToken);
                         p.setUpdatedAt(LocalDateTime.now());
                         parametroService.save(p);

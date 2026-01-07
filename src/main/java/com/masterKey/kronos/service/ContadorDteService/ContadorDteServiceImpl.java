@@ -6,6 +6,8 @@ import com.masterKey.kronos.repository.ContadorDteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 public class ContadorDteServiceImpl implements ContadorDteService{
 
@@ -23,8 +25,8 @@ public class ContadorDteServiceImpl implements ContadorDteService{
     }
 
     @Override
-    public ContadorDte findById(ContadorDteId id){
-        return contadorDteRepository.findById(id).get();
+    public Optional<ContadorDte> findById(ContadorDteId id){
+        return contadorDteRepository.findById(id);
     }
 
 }

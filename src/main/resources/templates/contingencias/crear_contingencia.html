@@ -300,9 +300,9 @@
                 if (r.ok && data && data.ok) {
                     if (window.Swal && typeof Swal.fire === 'function') {
                         Swal.fire({ icon: 'success', title: 'Contingencia guardada', text: data.message || 'Operación exitosa' })
-                            .then(() => { window.location.href = '/contingencias'; });
+                            .then(() => { window.location.href = '/contingencias/'+data.contingenciaId; });
                     } else {
-                        window.location.href = '/contingencias';
+                        window.location.href = '/contingencias/'+data.contingenciaId;
                     }
                 } else {
                     const msg = (data && data.message) ? data.message : 'Error al guardar la contingencia';

@@ -5,32 +5,60 @@
 <div class="wrapper">
     <div th:replace="~{fragments.html :: menu}"></div>
     <style>
-        /* Asegurar ancho completo como los form-control */
-        .select2-container { width: 100% !important; }
-        .select2-container { box-sizing: border-box; }
-        /* Evitar scroll horizontal cuando se abre el dropdown */
-        .content-wrapper { overflow-x: hidden; }
-        .select2-dropdown { overflow-x: hidden; box-sizing: border-box; max-width: 100% !important; }
-        /* Forzar que el dropdown no sea más ancho que el control */
-        .select2-dropdown.select2-dropdown-fixed { min-width: 100% !important; width: 100% !important; max-width: 100% !important; }
-        .select2-container { max-width: 100%; }
-        /* Evitar que textos largos expandan el ancho */
-        .select2-results, .select2-results__options { max-width: 100%; }
-        .select2-results__option { white-space: normal; word-break: break-word; overflow-wrap: anywhere; }
+
         /* Estilos de énfasis para totales */
         .total-amount { font-weight: 600; font-size: 1.05rem; background-color: #f8f9fa; }
         .totales-card .card-body .form-group label { font-weight: 600; }
-        /* Evitar interacción con Select2 cuando modal está abierto */
-        .modal-open .select2-container { pointer-events: none !important; z-index: 1 !important; }
-        /* Forzar ocultamiento del dropdown Select2 durante modal */
-        .modal-open .select2-container--open,
-        .modal-open .select2-container--open .select2-dropdown,
-        .modal-open .select2-dropdown { display: none !important; z-index: 1 !important; }
-        /* Alternativa extra mediante clase dedicada */
-        .s2-suppressed .select2-container { pointer-events: none !important; z-index: 1 !important; }
-        .s2-suppressed .select2-container--open,
-        .s2-suppressed .select2-container--open .select2-dropdown,
-        .s2-suppressed .select2-dropdown { display: none !important; z-index: 1 !important; }
+
+        /* Bloqueo visual/funcional para Select2 cuando se necesita deshabilitar interacción */
+        .select2-container.select2-locked { pointer-events: none !important; opacity: 0.6; }
+        /* Asegurar que el icono de limpiar (clear) de Select2 sea visible y haya espacio */
+        .select2-container--default .select2-selection--single .select2-selection__rendered { padding-right: 2.4rem; }
+        .select2-container--default .select2-selection--single .select2-selection__clear {
+            display: inline-block !important;
+            position: absolute !important;
+            right: 0.6rem !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+            /*z-index: 1050 !important;*/
+            width: 1.6rem !important;
+            height: 1.6rem !important;
+            line-height: 1.6rem !important;
+            text-align: center !important;
+            opacity: 0.9 !important;
+        }
+        /* Suprimir visualmente los Select2 cuando se abre un modal para evitar que queden por encima */
+        .s2-suppressed .select2-container { pointer-events: none !important; z-index: 0 !important; opacity: 0.6 !important; }
+        .s2-suppressed .select2-container .select2-selection { pointer-events: none !important; }
+        .s2-suppressed .select2-dropdown,
+        .s2-suppressed .select2-container--open .select2-dropdown { display: none !important; z-index: 0 !important; }
+        /* Asegurar jerarquía de z-index: Select2 por debajo de SweetAlert2 y modales */
+        .select2-container { z-index: 1000 !important; }
+        .select2-container--open .select2-dropdown,
+        .select2-dropdown { z-index: 1500 !important; }
+        /* SweetAlert2 debe quedar por encima de Select2 */
+        .swal2-container, .swal2-popup { z-index: 2000000 !important; }
+        /* Botón pequeño alineado con selects */
+        .btn-align-with-select {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: calc(2.25rem + 2px); /* coincide con altura de form-control */
+            padding: 0 .5rem;
+        }
+        /* Tabla de detalle: comportamiento DataTables-like en móvil
+           - usar scroll horizontal en el contenedor
+           - evitar apilar celdas/headers
+           - prevenir wrapping dentro de celdas para mantener filas legibles
+        */
+        @media (max-width: 576px) {
+            .table-responsive-mobile { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            /* Forzar una mínima anchura para que la tabla muestre scroll horizontal (ajustable) */
+            .table-responsive-mobile .table { min-width: 720px; table-layout: auto; }
+            /* Evitar que el contenido de celdas haga wrap y mantener encabezados en su fila */
+            .table-responsive-mobile .table th,
+            .table-responsive-mobile .table td { white-space: nowrap; vertical-align: middle; }
+        }
     </style>
 
     <!-- Content Wrapper. Contains page content -->
@@ -94,13 +122,22 @@
                                         </div>
                                         <div class="form-group col-12 col-md-6">
                                             <label for="cliente">Cliente</label>
-                                            <select id="cliente" class="form-control select2" name="cliente">
-                                                <option value="" selected>Seleccione un cliente</option>
-                                                <option th:each="c : ${clientes}"
-                                                        th:value="${c.id}"
-                                                        th:text="${c.nombreCliente}"
-                                                        th:attr="data-nombre=${c.nombreCliente},data-nrc=${c.noRegistro},data-nit=${c.nit},data-dui=${c.dui},data-tipo-contr-id=${c.tipoContribuyente != null ? c.tipoContribuyente.id : ''},data-correo=${c.correo}"></option>
-                                            </select>
+                                            <div class="row no-gutters">
+                                                <div class="col-11 pr-2">
+                                                    <select id="cliente" class="form-control select2" name="cliente">
+                                                        <option value="" selected>Seleccione un cliente</option>
+                                                        <option th:each="c : ${clientes}"
+                                                                th:value="${c.id}"
+                                                                th:text="${c.nombreCliente}"
+                                                                th:attr="data-nombre=${c.nombreCliente},data-nrc=${c.noRegistro},data-nit=${c.nit},data-dui=${c.dui},data-tipo-contr-id=${c.tipoContribuyente != null ? c.tipoContribuyente.id : ''},data-correo=${c.correo}"></option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-1 d-flex align-items-end">
+                                                    <button type="button" id="btnLimpiarCliente" class="btn btn-outline-secondary btn-sm btn-align-with-select" title="Limpiar cliente">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
                                             <div class="invalid-feedback">Seleccione un cliente.</div>
                                         </div>
                                     </div>
@@ -130,7 +167,7 @@
                                         <div class="form-group col-12 col-md-4">
                                             <label for="tipoDocFactura">Tipo Doc.</label>
                                             <select id="tipoDocFactura" class="form-control select2" name="tipo_doc_factura">
-                                                <option value="" disabled selected>Seleccione tipo</option>
+                                                <option value="" selected>Seleccione tipo</option>
                                                 <option value="NRC">NRC</option>
                                                 <option value="DUI">DUI</option>
                                                 <option value="NIT">NIT</option>
@@ -150,14 +187,14 @@
                                     </div>
                                     <!-- Sección de productos/servicios -->
                                     <div class="form-row align-items-end">
-                                        <div class="form-group col-5">
+                                        <div class="form-group col-12 col-md-5 mb-2 mb-md-0">
                                             <label for="productoServicio">Seleccione producto/servicio</label>
                                             <select id="productoServicio" class="form-control select2" name="productoServicio">
                                                 <option value="" disabled selected>Seleccione un item</option>
                                                 <option th:each="p : ${productos}" th:value="${p.id}" th:text="${p.descripcion}" th:data-precio="${p.precio}"></option>
                                             </select>
                                         </div>
-                                        <div class="form-group col-3">
+                                        <div class="form-group col-12 col-md-3 mb-2 mb-md-0">
                                             <label for="productoPrecio">Precio</label>
                                             <div class="input-group">
                                                 <div class="input-group-prepend">
@@ -166,16 +203,16 @@
                                                 <input type="text" id="productoPrecio" class="form-control decimal-dot select-on-focus" inputmode="decimal" pattern="^[0-9]*\.?[0-9]*$" min="0" value="0.00">
                                             </div>
                                         </div>
-                                        <div class="form-group col-2">
+                                        <div class="form-group col-6 col-md-2 mb-2 mb-md-0">
                                             <label for="cantidadAgregar">Cantidad</label>
                                             <input type="text" id="cantidadAgregar" class="form-control decimal-dot select-on-focus" inputmode="decimal" pattern="^[0-9]*\.?[0-9]*$" min="0" value="1">
                                         </div>
-                                        <div class="form-group col-2 d-flex">
-                                            <button type="button" class="btn btn-outline-primary ml-auto" id="btnAgregarItem">Agregar ítem</button>
+                                        <div class="form-group col-6 col-md-2 d-flex align-items-end mb-2 mb-md-0">
+                                            <button type="button" class="btn btn-outline-primary w-100" id="btnAgregarItem">Agregar ítem</button>
                                         </div>
                                         <div class="form-group col-12">
                                             <label>Detalle</label>
-                                            <div class="table-responsive">
+                                            <div class="table-responsive table-responsive-mobile">
                                                 <table class="table table-bordered" id="tablaItems">
                                                     <thead>
                                                     <tr>
@@ -397,6 +434,16 @@
         applyRetencionIfNeeded();
     }
 
+    // Vaciar la tabla de detalles y reiniciar totales
+    function clearItems() {
+        const tbody = document.querySelector('#tablaItems tbody');
+        if (tbody) tbody.innerHTML = '';
+        ['subtotal','iva','retencion','percepcion','total'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '0.00';
+        });
+    }
+
     function getSelectedClienteTipoContrId(){
         const sel = document.getElementById('cliente');
         if (!sel || !sel.value) return null;
@@ -466,24 +513,24 @@
         const rowTotal = qty * price;
         tr.dataset.productId = productoId || '';
         tr.innerHTML = `
-            <td>
+            <td data-label="Descripción">
                 <input type="hidden" class="item-id" value="${productoId || ''}">
                 <input type="text" class="form-control item-descripcion" placeholder="Descripción" value="${safeDesc}">
             </td>
-            <td><input type="text" class="form-control item-cantidad decimal-dot select-on-focus" inputmode="decimal" pattern="^[0-9]*\\.?[0-9]*$" min="0" value="${qty.toFixed(2)}"></td>
-            <td>
+            <td data-label="Cantidad"><input type="text" class="form-control item-cantidad decimal-dot select-on-focus" inputmode="decimal" pattern="^[0-9]*\\.?[0-9]*$" min="0" value="${qty.toFixed(2)}"></td>
+            <td data-label="Precio Unitario">
                 <div class="input-group">
                     <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-dollar-sign"></i></span></div>
                     <input type="text" class="form-control item-precio decimal-dot select-on-focus" inputmode="decimal" pattern="^[0-9]*\\.?[0-9]*$" min="0" value="${price.toFixed(2)}">
                 </div>
             </td>
-            <td>
+            <td data-label="Total">
                 <div class="input-group">
                     <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-dollar-sign"></i></span></div>
                     <input type="text" class="form-control item-total decimal-dot" inputmode="decimal" pattern="^[0-9]*\\.?[0-9]*$" min="0" value="${rowTotal.toFixed(2)}" readonly>
                 </div>
             </td>
-            <td><button type="button" class="btn btn-danger btn-sm item-remove">&times;</button></td>
+            <td data-label="Acciones"><button type="button" class="btn btn-danger btn-sm item-remove">&times;</button></td>
         `;
         tbody.appendChild(tr);
         tr.querySelector('.item-cantidad').addEventListener('input', recalcItemsSubtotal);
@@ -496,6 +543,12 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
+        // Guardar las opciones originales del select tipoDocFactura para poder restaurarlas
+        let tipoDocFacturaOriginalOptions = null;
+        try {
+            const td = document.getElementById('tipoDocFactura');
+            if (td) tipoDocFacturaOriginalOptions = td.innerHTML;
+        } catch(_) { tipoDocFacturaOriginalOptions = null; }
         const btnAdd = document.getElementById('btnAgregarItem');
         if (btnAdd) btnAdd.addEventListener('click', function() {
             const select = document.getElementById('productoServicio');
@@ -677,26 +730,56 @@
         // Enviar por AJAX al backend y manejar ok/message
         async function enviarVenta(payload) {
             try {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Procesando...',
+                    text: 'Por favor espere',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
                 const resp = await fetch('/ventas/guardar', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
                 const data = await resp.json().catch(() => ({ ok: false, message: 'Respuesta inválida del servidor' }));
-                const isOk = !!(data && data.ok);
-                const msg = (data && data.message) ? data.message : (isOk ? 'Operación exitosa' : 'Ocurrió un error');
-                if (window.Swal && typeof Swal.fire === 'function') {
-                    await Swal.fire({ icon: isOk ? 'success' : 'error', title: msg });
-                } else {
-                    alert(msg);
+                Swal.close();
+                if(data.ok){
+                    //const respuestaMH = JSON.parse(data.respuestaMh);
+                    if(data.respuestaMh.estado == "PROCESADO"){
+                        swal.fire({
+                            icon: 'success',
+                            title: 'Venta enviada!',
+                            text: 'La venta ha sido enviada correctamente.'
+                        }).then(function() {
+                            window.location.href = "/ventas";
+                        });
+                    }else{
+                        swal.fire({
+                            icon: 'error',
+                            title: 'Venta con error MH',
+                            text: data.respuestaMh.descripcionMsg
+                        }).then(function() {
+                            window.location.href = "/ventas";
+                        });
+                    }
+                }else{
+                    swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Error al guardar la venta: ' + data.message
+                    });
                 }
-                return isOk;
+
             } catch (err) {
                 console.error('Error enviando venta', err);
                 if (window.Swal && typeof Swal.fire === 'function') {
-                    await Swal.fire({ icon: 'error', title: 'Error de red', text: 'No se pudo comunicar con el servidor.' });
+                    await Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo procesar en el servidor' });
                 } else {
-                    alert('Error de red: no se pudo comunicar con el servidor.');
+                    alert('No se pudo procesar en el servidor');
                 }
                 return false;
             }
@@ -711,7 +794,7 @@
             const ok = await enviarVenta(payload);
             if (btn) btn.disabled = false;
             // Aquí podrías redirigir si fue ok, p.ej. a /ventas
-            // if (ok) window.location.href = '/ventas';
+            //if (ok) window.location.href = '/ventas';
         }
 
         const btnProcesar = document.getElementById('btnProcesarVenta');
@@ -755,7 +838,15 @@
                         dropdownCssClass: 'select2-dropdown-fixed',
                         dropdownParent: $parent.length ? $parent : $('#formVenta')
                     };
-                    if (id === 'cliente') { opts.allowClear = true; }
+                    // Forzar que el dropdown de cliente, tipoDocFactura y productoServicio se renderice en body para evitar stacking context
+                    if (id === 'cliente' || id === 'tipoDocFactura' || id === 'productoServicio') {
+                        try { opts.dropdownParent = $(document.body); } catch(_) { opts.dropdownParent = $('body'); }
+                    }
+                    if (id === 'cliente' || id === 'tipoDocFactura') {
+                        // allowClear requiere placeholder y opción vacía en el select
+                        opts.allowClear = true;
+                        opts.placeholder = { id: '', text: placeholders[id] || 'Seleccione...' };
+                    }
                     $el.select2(opts);
                 }
             });
@@ -779,6 +870,33 @@
                     if (correoEl) { correoEl.value = ''; correoEl.classList.remove('is-valid','is-invalid'); }
                     // Ya no deshabilitamos Guardar al limpiar
                 });
+                // Botón para limpiar cliente junto al select
+                const btnLimpiarCliente = document.getElementById('btnLimpiarCliente');
+                if (btnLimpiarCliente) {
+                    btnLimpiarCliente.addEventListener('click', function(){
+                        try {
+                            if (window.jQuery && $.fn && $.fn.select2) {
+                                $cliente.val(null).trigger('change');
+                                // trigger select2 clear handler explicitly
+                                $cliente.trigger('select2:clear');
+                            } else {
+                                const sel = document.getElementById('cliente');
+                                if (sel) {
+                                    sel.value = '';
+                                    try { sel.dispatchEvent(new Event('change')); } catch(_) {}
+                                    try { handleClienteChange(false); } catch(_) {}
+                                }
+                            }
+                        } catch(_) {}
+                    });
+                }
+            }
+            // Manejar limpiar del tipo de documento en Select2 (limpiar placeholders/validaciones)
+            const $tipoDoc = $('#tipoDocFactura');
+            if ($tipoDoc.length) {
+                $tipoDoc.on('select2:clear', function(){
+                    try { updateDocPlaceholder(); updateDocValidityClass(); } catch(_){}
+                });
             }
         } else {
             console.warn('Select2 no está cargado. Verifique los scripts en fragments.html');
@@ -793,19 +911,75 @@
         });
 
         // Nombre en factura según tipo de documento (Factura => CONSUMIDOR FINAL)
+        // Además, al cambiar el tipo de documento se limpian: cliente, tipo doc factura, doc factura y correo.
         function updateNombreFacturaByTipo() {
             const checked = document.querySelector('input[name="tipoDocumentoId"]:checked');
             const nombreTipo = (checked && checked.getAttribute('data-nombre')) ? checked.getAttribute('data-nombre') : '';
             const nombreInput = document.getElementById('nombreFactura');
-            if (!nombreInput) return;
-            // Si el nombre fue fijado por selección de cliente, no sobreescribir
-            if (nombreInput.dataset.fixed === 'true') return;
-            const isFactura = nombreTipo && nombreTipo.toLowerCase().includes('factura');
-            if (isFactura) {
-                nombreInput.value = 'CONSUMIDOR FINAL';
-            } else {
-                nombreInput.value = '';
+            const clienteSel = document.getElementById('cliente');
+            const tipoDocSel = document.getElementById('tipoDocFactura');
+            const docFacturaInput = document.getElementById('docFactura');
+            const correoEl = document.getElementById('correoFactura');
+
+            const norm = (typeof normalizeStr === 'function') ? normalizeStr(nombreTipo) : (nombreTipo || '').toLowerCase();
+
+            // Limpiar selección de cliente
+            if (clienteSel) {
+                clienteSel.value = '';
+                if (window.jQuery && $.fn && $.fn.select2) {
+                    try { $(clienteSel).val(null).trigger('change'); } catch(_) { }
+                } else {
+                    try { clienteSel.dispatchEvent(new Event('change')); } catch(_) { }
+                }
             }
+
+            // Nombre en factura: si es FACTURA dejar CONSULMIDOR FINAL (CONSUMIDOR FINAL), sino vaciar
+            if (norm.includes('factura')) {
+                if (nombreInput) { nombreInput.value = 'CONSUMIDOR FINAL'; nombreInput.dataset.fixed = 'true'; }
+            } else {
+                if (nombreInput) { nombreInput.value = ''; nombreInput.dataset.fixed = 'false'; }
+            }
+
+            // Limpiar tipo doc, documento y correo
+            if (tipoDocSel) {
+                tipoDocSel.value = '';
+                if (window.jQuery && $.fn && $.fn.select2) { try { $(tipoDocSel).val(null).trigger('change'); } catch(_) { } }
+                // Si el tipo general es 'factura', remover la opción NRC del select de tipoDocFactura
+                try {
+                    if (typeof tipoDocFacturaOriginalOptions !== 'undefined' && tipoDocFacturaOriginalOptions !== null) {
+                        if (norm.includes('factura')) {
+                            const opt = tipoDocSel.querySelector('option[value="NRC"]');
+                            if (opt) opt.remove();
+                            // Si estaba seleccionado NRC, limpiar el valor
+                            if (tipoDocSel.value === 'NRC') {
+                                tipoDocSel.value = '';
+                                if (window.jQuery && $.fn && $.fn.select2) { try { $(tipoDocSel).val(null).trigger('change'); } catch(_) {} }
+                            }
+                        } else {
+                            // Restaurar opciones originales si faltan (p.ej. NRC)
+                            if (!tipoDocSel.querySelector('option[value="NRC"]')) {
+                                tipoDocSel.innerHTML = tipoDocFacturaOriginalOptions;
+                                if (window.jQuery && $.fn && $.fn.select2) {
+                                    try { $(tipoDocSel).select2('destroy'); } catch(_) {}
+                                    const $parent = $(tipoDocSel).closest('.form-group');
+                                    try { $(tipoDocSel).select2({ width: '100%', allowClear: true, placeholder: { id: '', text: 'Seleccione tipo' }, dropdownAutoWidth: false, dropdownCssClass: 'select2-dropdown-fixed', dropdownParent: $(document.body) }); } catch(_) {}
+                                }
+                            }
+                        }
+                    }
+                } catch(_) {}
+            }
+            if (docFacturaInput) { docFacturaInput.value = ''; docFacturaInput.classList.remove('is-valid','is-invalid'); }
+            if (correoEl) { correoEl.value = ''; correoEl.classList.remove('is-valid','is-invalid'); }
+            // Limpiar selección de Nota de Crédito si existía
+            const ventaIdNc = document.getElementById('ventaIdNc');
+            const ventaNcResumen = document.getElementById('ventaNcResumen');
+            if (ventaIdNc) { ventaIdNc.value = ''; }
+            if (ventaNcResumen) { ventaNcResumen.value = ''; }
+            // Limpiar detalles también cuando se limpia la selección por cambio de tipo
+            try { clearItems(); } catch(_) {}
+            // Asegurar que si se limpia por cambio de tipo se revoque el bloqueo
+            try { unlockFieldsForNc(); } catch(_) {}
         }
 
         // ========== Máscaras y validación para documento factura ==========
@@ -938,7 +1112,7 @@
 
             // Si no hay cliente seleccionado: resetear dependencias sin alertas
             if (!sel.value) {
-                if (nombreInput) { nombreInput.value = ''; nombreInput.dataset.fixed = 'false'; }
+                //if (nombreInput) { nombreInput.value = ''; nombreInput.dataset.fixed = 'false'; }
                 if (tipoDocSel) {
                     tipoDocSel.value = '';
                     if (window.jQuery && $.fn && $.fn.select2) { $(tipoDocSel).val(null).trigger('change'); }
@@ -957,9 +1131,37 @@
 
             let tipo = '';
             let num = '';
-            if (nrc) { tipo = 'NRC'; num = nrc; }
-            else if (dui) { tipo = 'DUI'; num = dui; }
-            else if (nit) { tipo = 'NIT'; num = nit; }
+            // Prioridad: si el tipo general es FACTURA => preferir DUI, luego NIT; NO usar NRC
+            const general = (typeof getTipoDocumentoGeneral === 'function') ? getTipoDocumentoGeneral() : { nombre: '' };
+            const isFactura = (typeof normalizeStr === 'function') ? normalizeStr(general.nombre || '').includes('factura') : (general.nombre || '').toLowerCase().includes('factura');
+            if (isFactura) {
+                if (dui) { tipo = 'DUI'; num = dui; }
+                else if (nit) { tipo = 'NIT'; num = nit; }
+                else {
+                    // Solo NRC disponible: no está permitido para Factura
+                    if (nombreInput) { nombreInput.value = ''; nombreInput.dataset.fixed = 'false'; }
+                    if (tipoDocSel) {
+                        tipoDocSel.value = '';
+                        if (window.jQuery && $.fn && $.fn.select2) { $(tipoDocSel).val(null).trigger('change'); }
+                    }
+                    if (docFacturaInput) { docFacturaInput.value = ''; docFacturaInput.classList.remove('is-valid','is-invalid'); }
+                    const correoEl = document.getElementById('correoFactura');
+                    if (correoEl) { correoEl.value = ''; correoEl.classList.remove('is-valid','is-invalid'); }
+                    if (!silent) {
+                        if (window.Swal && typeof Swal.fire === 'function') {
+                            Swal.fire({ icon: 'warning', title: 'NRC no válido para Factura', text: 'El cliente solo tiene NRC registrado. NRC no se permite para Factura. Seleccione otro cliente o cambie el tipo de documento.' });
+                        } else {
+                            alert('El cliente solo tiene NRC y NRC no está permitido para Factura. Seleccione otro cliente o cambie el tipo de documento.');
+                        }
+                    }
+                    return;
+                }
+            } else {
+                // Comportamiento por defecto para otros tipos: NRC > DUI > NIT
+                if (nrc) { tipo = 'NRC'; num = nrc; }
+                else if (dui) { tipo = 'DUI'; num = dui; }
+                else if (nit) { tipo = 'NIT'; num = nit; }
+            }
 
             if (!tipo) {
                 // Sin documentos: alertar y resetear estados, sin bloquear Guardar
@@ -1021,6 +1223,78 @@
             sec.style.display = isNc ? '' : 'none';
         }
 
+        // Bloquear campos relevantes cuando se selecciona una venta para Nota de Crédito
+        function lockFieldsForNc(){
+            const clienteSel = document.getElementById('cliente');
+            const nombreInput = document.getElementById('nombreFactura');
+            const tipoDocSel = document.getElementById('tipoDocFactura');
+            const docFacturaInput = document.getElementById('docFactura');
+            const correoEl = document.getElementById('correoFactura');
+
+            if (clienteSel) {
+                    clienteSel.disabled = true;
+                    if (window.jQuery && $.fn && $.fn.select2) {
+                        try { $(clienteSel).prop('disabled', true).trigger('change.select2').select2('close');
+                            // bloquear visualmente el container de select2 (usar data('select2') para localizarlo)
+                            try {
+                                var s2 = $(clienteSel).data('select2');
+                                if (s2 && s2.$container) { s2.$container.addClass('select2-locked'); }
+                                else { var $c = $(clienteSel).next('.select2-container'); if ($c.length) $c.addClass('select2-locked'); }
+                            } catch(_){}
+                        } catch(_) {}
+                    }
+            }
+            if (nombreInput) { nombreInput.readOnly = true; nombreInput.classList.add('bg-light'); }
+            if (tipoDocSel) {
+                tipoDocSel.disabled = true;
+                if (window.jQuery && $.fn && $.fn.select2) {
+                    try {
+                        $(tipoDocSel).prop('disabled', true).trigger('change.select2').select2('close');
+                        var s2t = $(tipoDocSel).data('select2');
+                        if (s2t && s2t.$container) { s2t.$container.addClass('select2-locked'); }
+                        else { var $c2 = $(tipoDocSel).next('.select2-container'); if ($c2.length) $c2.addClass('select2-locked'); }
+                    } catch(_) {}
+                }
+            }
+            if (docFacturaInput) { docFacturaInput.readOnly = true; docFacturaInput.classList.add('bg-light'); }
+            if (correoEl) { correoEl.readOnly = true; correoEl.classList.add('bg-light'); }
+        }
+
+        // Revertir bloqueo de campos para Nota de Crédito
+        function unlockFieldsForNc(){
+            const clienteSel = document.getElementById('cliente');
+            const nombreInput = document.getElementById('nombreFactura');
+            const tipoDocSel = document.getElementById('tipoDocFactura');
+            const docFacturaInput = document.getElementById('docFactura');
+            const correoEl = document.getElementById('correoFactura');
+
+            if (clienteSel) {
+                clienteSel.disabled = false;
+                if (window.jQuery && $.fn && $.fn.select2) {
+                    try {
+                        $(clienteSel).prop('disabled', false).trigger('change.select2');
+                        var s2c = $(clienteSel).data('select2');
+                        if (s2c && s2c.$container) { s2c.$container.removeClass('select2-locked'); }
+                        else { var $c = $(clienteSel).next('.select2-container'); if ($c.length) $c.removeClass('select2-locked'); }
+                    } catch(_) {}
+                }
+            }
+            if (nombreInput) { nombreInput.readOnly = false; nombreInput.classList.remove('bg-light'); nombreInput.dataset.fixed = 'false'; }
+            if (tipoDocSel) {
+                tipoDocSel.disabled = false;
+                if (window.jQuery && $.fn && $.fn.select2) {
+                    try {
+                        $(tipoDocSel).prop('disabled', false).trigger('change.select2');
+                        var s2t2 = $(tipoDocSel).data('select2');
+                        if (s2t2 && s2t2.$container) { s2t2.$container.removeClass('select2-locked'); }
+                        else { var $c2 = $(tipoDocSel).next('.select2-container'); if ($c2.length) $c2.removeClass('select2-locked'); }
+                    } catch(_) {}
+                }
+            }
+            if (docFacturaInput) { docFacturaInput.readOnly = false; docFacturaInput.classList.remove('bg-light'); docFacturaInput.classList.remove('is-valid','is-invalid'); }
+            if (correoEl) { correoEl.readOnly = false; correoEl.classList.remove('bg-light'); correoEl.classList.remove('is-valid','is-invalid'); }
+        }
+
         document.querySelectorAll('input[name="tipoDocumentoId"]').forEach(r => {
             r.addEventListener('change', function(){
                 updateNombreFacturaByTipo();
@@ -1069,12 +1343,35 @@
             tbody.innerHTML = '';
             (data || []).forEach(v => {
                 const tr = document.createElement('tr');
+
+                // Formatear fecha a dd/mm/yyyy
+                let dateFormatted = '';
+                if (v && v.fecha) {
+                    const parsed = new Date(v.fecha);
+                    if (!isNaN(parsed.getTime())) {
+                        const dd = String(parsed.getDate()).padStart(2,'0');
+                        const mm = String(parsed.getMonth() + 1).padStart(2,'0');
+                        const yyyy = parsed.getFullYear();
+                        dateFormatted = `${dd}/${mm}/${yyyy}`;
+                    } else {
+                        const m = (v.fecha || '').toString().match(/(\d{4})-(\d{2})-(\d{2})/);
+                        if (m) dateFormatted = `${m[3]}/${m[2]}/${m[1]}`;
+                        else dateFormatted = (v.fecha || '').toString().replace('T',' ');
+                    }
+                }
+
+                const clienteNombre = v.clienteNombre || '';
+                const tipoDocumento = v.tipoDocumento || '';
+                // Formatear monto con signo $
+                const montoNum = toNum(v.total || 0);
+                const montoFormateado = '$' + toMoney(montoNum);
+
                 tr.innerHTML = `
                     <td>${v.id}</td>
-                    <td>${(v.fecha || '').toString().replace('T',' ')}</td>
-                    <td>${v.clienteNombre || ''}</td>
-                    <td>${v.tipoDocumento || ''}</td>
-                    <td class="text-right">${v.total}</td>
+                    <td>${dateFormatted}</td>
+                    <td>${clienteNombre}</td>
+                    <td>${tipoDocumento}</td>
+                    <td class="text-right">${montoFormateado}</td>
                     <td><button type="button" class="btn btn-sm btn-primary seleccionar-venta-nc" data-id="${v.id}">Elegir</button></td>
                 `;
                 tbody.appendChild(tr);
@@ -1085,13 +1382,37 @@
                 btn.addEventListener('click', function(){
                     const id = this.getAttribute('data-id');
                     const row = this.closest('tr');
-                    const resumen = `ID ${id} - ${row.children[1].textContent} - ${row.children[2].textContent} - ${row.children[4].textContent}`;
+
+                    // Formatear fecha a dd/mm/yyyy si es posible
+                    const rawDate = (row.children[1].textContent || '').trim();
+                    let dateFormatted = rawDate;
+                    const parsed = new Date(rawDate);
+                    if (!isNaN(parsed.getTime())) {
+                        const dd = String(parsed.getDate()).padStart(2,'0');
+                        const mm = String(parsed.getMonth() + 1).padStart(2,'0');
+                        const yyyy = parsed.getFullYear();
+                        dateFormatted = `${dd}/${mm}/${yyyy}`;
+                    } else {
+                        // Intentar extraer YYYY-MM-DD
+                        const m = rawDate.match(/(\d{4})-(\d{2})-(\d{2})/);
+                        if (m) dateFormatted = `${m[3]}/${m[2]}/${m[1]}`;
+                    }
+
+                    const clienteNombre = (row.children[2].textContent || '').trim();
+                    // Formatear monto con signo dólar
+                    const rawMonto = (row.children[4].textContent || '').replace(/[^0-9\.,-]/g,'').trim();
+                    const montoNum = toNum(rawMonto);
+                    const montoFormateado = '$' + toMoney(montoNum);
+
+                    const resumen = `ID ${id} - ${dateFormatted} - ${clienteNombre} - ${montoFormateado}`;
                     const idIn = document.getElementById('ventaIdNc');
                     const resumenIn = document.getElementById('ventaNcResumen');
                     if (idIn) idIn.value = id;
                     if (resumenIn) resumenIn.value = resumen;
-                    // Prefill datos desde la venta seleccionada
-                    prefillNotaCreditoFromVenta(id).catch(err => console.error('Prefill NC error', err));
+                    // Prefill datos desde la venta seleccionada y luego bloquear campos
+                    prefillNotaCreditoFromVenta(id).then(function(){
+                        try { lockFieldsForNc(); } catch(e){ console.error('lockFieldsForNc error', e); }
+                    }).catch(err => console.error('Prefill NC error', err));
                     if (window.jQuery) { $('#modalVentasNc').modal('hide'); }
                 });
             });
@@ -1099,41 +1420,43 @@
         if (btnSelNc) {
             btnSelNc.addEventListener('click', function(){
                 // Cerrar cualquier dropdown de Select2 antes de abrir modal (solo si está inicializado)
-                if (window.jQuery && $.fn && $.fn.select2) {
+                /*if (window.jQuery && $.fn && $.fn.select2) {
                     $('select.select2').each(function(){
                         var $el = $(this);
                         if ($el.data('select2')) { $el.select2('close'); }
                     });
-                }
+                }*/
                 cargarVentasElegibles().then(data => { fillTablaElegibles(data); bindSelectButtons(); });
                 if (window.jQuery) { $('#modalVentasNc').modal('show'); }
             });
         }
         // Asegurar cierre select2 cuando se abre/cierra el modal (adicional)
-        if (window.jQuery) {
+            if (window.jQuery) {
             $('#modalVentasNc').on('show.bs.modal', function(){
+                // Cerrar cualquier Select2 abierto y suprimir visualmente los containers
                 if ($.fn && $.fn.select2) {
-                    $('select.select2').each(function(){
-                        var $el = $(this);
-                        if ($el.data('select2')) { $el.select2('close'); }
-                    });
+                    $('select.select2').each(function(){ var $el = $(this); if ($el.data('select2')) { try { $el.select2('close'); } catch(_) {} } });
                 }
-                $('.select2-hidden-accessible').blur();
-                // Forzar supresión visual
+                // Aplicar clase que oculta/suprime los Select2 (CSS .s2-suppressed)
                 $('body').addClass('s2-suppressed');
-                // Deshabilitar selects select2 temporalmente
-                $('select.select2').prop('disabled', true);
+                // Forzar z-index bajo en containers que no estén marcados como locked
+                $('.select2-container').each(function(){ var $c = $(this); if (!$c.hasClass('select2-locked')) { try { $c.css('z-index', 0); } catch(_){} } });
             });
             $('#modalVentasNc').on('hidden.bs.modal', function(){
+                // Revertir la supresión visual
                 $('body').removeClass('s2-suppressed');
-                // Rehabilitar selects select2
-                $('select.select2').prop('disabled', false);
-                if ($.fn && $.fn.select2) {
-                    $('select.select2').each(function(){
-                        var $el = $(this);
-                        if ($el.data('select2')) { $el.select2(); }
+                $('.select2-container').each(function(){ var $c = $(this); if (!$c.hasClass('select2-locked')) { try { $c.css('z-index',''); } catch(_){} } });
+                // Asegurar que los containers estén en su sitio (intentar reubicar si alguna inicialización los movió)
+                try {
+                    $('.select2-container').each(function(){
+                        var $c = $(this);
+                        var $sel = $c.prev('select');
+                        if ($sel && $sel.length) {
+                            var $fg = $sel.closest('.form-group');
+                            if ($fg && $fg.length) { $c.appendTo($fg); }
+                        }
                     });
-                }
+                } catch(_) {}
             });
         }
         if (btnClrNc) {
@@ -1142,6 +1465,28 @@
                 const resumenIn = document.getElementById('ventaNcResumen');
                 if (idIn) idIn.value = '';
                 if (resumenIn) resumenIn.value = '';
+                // Limpiar también datos del cliente y campos de facturación
+                try {
+                    const clienteSel = document.getElementById('cliente');
+                    const nombreFactura = document.getElementById('nombreFactura');
+                    const tipoDocSel = document.getElementById('tipoDocFactura');
+                    const docFactura = document.getElementById('docFactura');
+                    const correo = document.getElementById('correoFactura');
+
+                    if (clienteSel) {
+                        clienteSel.value = '';
+                        if (window.jQuery && $.fn && $.fn.select2) { $(clienteSel).val(null).trigger('change'); }
+                        else { clienteSel.dispatchEvent(new Event('change')); }
+                    }
+                    if (nombreFactura) { nombreFactura.value = ''; nombreFactura.dataset.fixed = 'false'; }
+                    if (tipoDocSel) { tipoDocSel.value = ''; if (window.jQuery && $.fn && $.fn.select2) { $(tipoDocSel).val(null).trigger('change'); } }
+                    if (docFactura) { docFactura.value = ''; docFactura.classList.remove('is-valid','is-invalid'); }
+                    if (correo) { correo.value = ''; correo.classList.remove('is-valid','is-invalid'); }
+
+                    // Limpiar detalles también al pulsar limpiar
+                    try { clearItems(); } catch(_) {}
+                    unlockFieldsForNc();
+                } catch(_) { try { unlockFieldsForNc(); } catch(_) {} }
             });
         }
         updateNcSectionVisibility();

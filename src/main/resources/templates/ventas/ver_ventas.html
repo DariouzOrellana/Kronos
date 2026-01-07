@@ -84,32 +84,47 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <tr th:each="v : ${ventas}">
-                                                <td class="text-nowrap">
-                                                    <a th:if="${v.selloMh == null || #strings.isEmpty(v.selloMh)}" th:href="@{'/ventas/' + ${v.id} + '/enviar-dte'}" class="btn btn-sm btn-warning" title="Enviar DTE" target="_blank" rel="noopener noreferrer">
-                                                        <i class="fas fa-paper-plane"></i>
-                                                    </a>
-                                                    <button type="button" class="btn btn-sm btn-secondary btn-enviar-correo" title="Enviar por correo"
+                                                                                        <tr th:each="v : ${ventas}">
+                                                                                                <td class="sorting_1 text-nowrap">
+                                                                                                        <button type="button" class="btn btn-default dropdown-toggle btn-sm" data-toggle="dropdown" aria-expanded="false">
+                                                                                                            <i class="fas fa-th"></i>
+                                                                                                        </button>
+                                                                                                        <div class="dropdown-menu p-2">
+                                                                                                            <div class="d-flex flex-wrap align-items-center">
+                                                                                                                <button type="button" class="btn btn-sm btn-secondary btn-enviar-correo" title="Enviar por correo"
                                                             th:attr="data-venta-id=${v.id},data-email=${v.correo}">
-                                                        <i class="fas fa-envelope"></i>
-                                                    </button>
-                                                    <a th:href="@{'/ventas/' + ${v.id} + '/pdf'}" class="btn btn-sm btn-secondary" title="Ver PDF" target="_blank" rel="noopener noreferrer">
-                                                        <i class="fas fa-file-pdf"></i>
-                                                    </a>
-                                                    <a th:href="@{'/ventas/' + ${v.id} + '/json'}" class="btn btn-sm btn-secondary" title="Ver JSON" target="_blank" rel="noopener noreferrer">
-                                                        <i class="fas fa-code"></i>
-                                                    </a>
-                                                    <button th:if="${(not #strings.isEmpty(v.selloMh)) and (v.contingencia == 0) and ( #strings.isEmpty(v.codigoGeneracionAnulacion) )}"
+                                                                                                                    <i class="fas fa-envelope"></i>
+                                                                                                                </button>
+
+                                                                                                                <a th:href="@{/ventas/generar_pdf(codigoGeneracion=${v.codigoGeneracion},fecEmi=${#temporals.format(v.fecha,'yyyy-MM-dd')})}" class="btn btn-secondary btn-sm m-1" target="_blank" rel="noopener noreferrer">
+                                                                                                                    <i class="fas fa-file-pdf"></i>
+                                                                                                                </a>
+
+                                                                                                                <a th:href="@{/ventas/generar_json(codigoGeneracion=${v.codigoGeneracion},fecEmi=${#temporals.format(v.fecha,'yyyy-MM-dd')})}" class="btn btn-secondary btn-sm m-1" target="_blank" rel="noopener noreferrer">
+                                                                                                                    <i class="fas fa-bars"></i>
+                                                                                                                </a>
+
+                                                                                                                <button th:if="${v.selloMh != '' and v.selloMh != null}"
                                                             type="button" class="btn btn-sm btn-danger btn-anular-venta" title="Anular venta"
                                                             th:attr="data-venta-id=${v.id}">
-                                                        <i class="fas fa-ban"></i>
+                                                                                                                    <i class="fas fa-ban"></i>
+                                                                                                                </button>
+                                                                                                            </div>
+                                                                                                        </div>
+                                                                                                        <button
+                                                            th:if="${v.selloMh == null || #strings.isEmpty(v.selloMh)}"
+                                                            th:attr="data-venta-id=${v.id}"
+                                                            title="Enviar DTE"
+                                                            class="btn btn-sm btn-primary btn-procesar-venta"
+                                                    >
+                                                        <i class="fas fa-paper-plane"></i>
                                                     </button>
-                                                </td>
+                                                                                                </td>
                                                 <td th:text="${v.id}"></td>
                                                 <td>
                                                     <span class="badge"
-                                                          th:text="${(not #strings.isEmpty(v.codigoGeneracionAnulacion)) ? 'Anulada' : (v.contingencia == 1 ? 'Contingencia' : ((v.selloMh != null and not #strings.isEmpty(v.selloMh)) ? 'Procesado' : 'Pendiente'))}"
-                                                          th:classappend="${(not #strings.isEmpty(v.codigoGeneracionAnulacion)) ? 'badge-danger' : (v.contingencia == 1 ? 'badge-warning' : ((v.selloMh != null and not #strings.isEmpty(v.selloMh)) ? 'badge-success' : 'badge-warning'))}">
+                                                          th:text="${(not #strings.isEmpty(v.codigoGeneracionAnulacion)) ? 'Anulada' : (v.contingencia == 1 and v.selloMh == null ? 'Contingencia' : ((v.selloMh != null and not #strings.isEmpty(v.selloMh)) ? 'Procesado' : 'Pendiente'))}"
+                                                          th:classappend="${(not #strings.isEmpty(v.codigoGeneracionAnulacion)) ? 'badge-danger' : (v.contingencia == 1 and v.selloMh == null ? 'badge-warning' : ((v.selloMh != null and not #strings.isEmpty(v.selloMh)) ? 'badge-success' : 'badge-secondary'))}">
                                                     </span>
                                                 </td>
                                                 <td th:text="${v.usuario != null ? v.usuario.username : ''}"></td>
@@ -165,6 +180,7 @@
         </div>
     </div>
     </div>
+
 <script>
     document.addEventListener('DOMContentLoaded', function(){
         if (window.jQuery && $('#tablaVentas').length) {
@@ -207,11 +223,112 @@
             $('#btnModalEnviarCorreo').on('click', function(){
                 const ventaId = $('#correoVentaId').val();
                 const email = $('#correoDestino').val();
-                // TODO: Implementar lógica para enviar correo (fetch/POST)
-                console.log('Enviar correo - Venta ID:', ventaId, 'Email:', email);
-                // Cerrar modal tras stub
-                $('#modalEnviarCorreo').modal('hide');
+
+                Swal.fire({
+                    title: 'Enviando correo...',
+                    text: 'Por favor espere',
+                    icon: 'info',
+                    allowOutsideClick: false,
+                    didOpen: Swal.showLoading
+                });
+
+                const formData = new FormData();
+                formData.append('idVenta', ventaId);
+                formData.append('correoDestinatario', email);
+
+                fetch('./ventas/enviar-correo', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(async response => {
+                        const text = await response.text();
+
+                        if (!response.ok) {
+                            throw new Error(text || 'Error al enviar el correo');
+                        }
+
+                        return text;
+                    })
+                    .then(mensaje => {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Correo en proceso',
+                            text: mensaje
+                        });
+                    })
+                    .catch(error => {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: error.message || 'Hubo un error enviando el correo'
+                        });
+                    });
+
+
+                //$('#modalEnviarCorreo').modal('hide');
             });
+            // Procesar venta
+            $(document).on('click', '.btn-procesar-venta', function(){
+                const ventaId = $(this).data('venta-id');
+                enviarVenta(ventaId);
+
+            });
+
+            // Enviar por AJAX al backend y manejar ok/message
+            async function enviarVenta(idVenta) {
+                try {
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Procesando...',
+                        text: 'Por favor espere',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                    const resp = await fetch('./ventas/'+idVenta+'/procesarDte', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    const data = await resp.json().catch(() => ({ ok: false, message: 'Respuesta inválida del servidor' }));
+                    Swal.close();
+                    if(data.ok){
+                        //const respuestaMH = JSON.parse(data.respuestaMh);
+                        if(data.respuestaMh.estado == "PROCESADO"){
+                            swal.fire({
+                                icon: 'success',
+                                title: 'Venta enviada!',
+                                text: 'La venta ha sido enviada correctamente.'
+                            }).then(function() {
+                                window.location.href = "/ventas";
+                            });
+                        }else{
+                            swal.fire({
+                                icon: 'error',
+                                title: 'Venta #'+idVenta+' con error MH',
+                                text: data.respuestaMh.descripcionMsg
+                            }).then(function() {
+                                //window.location.href = "/ventas";
+                            });
+                        }
+                    }else{
+                        swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Error al guardar la venta: ' + data.message
+                        });
+                    }
+
+                } catch (err) {
+                    console.error('Error enviando venta', err);
+                    if (window.Swal && typeof Swal.fire === 'function') {
+                        await Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo procesar en el servidor' });
+                    } else {
+                        alert('No se pudo procesar en el servidor');
+                    }
+                    return false;
+                }
+            }
 
             // Abrir modal de anulación y precargar ventaId
             $(document).on('click', '.btn-anular-venta', function(){
@@ -280,15 +397,49 @@
                     num_doc_solicita: $('#numDocSolicita').val()
                 };
                 try{
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Procesando...',
+                        text: 'Por favor espere',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
                     const resp = await fetch(`/anulacion/guardar`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
                     });
-                    if (resp.ok) {
-                        $('#modalAnularVenta').modal('hide');
+                    const data = await resp.json().catch(() => ({ ok: false, message: 'Respuesta inválida del servidor' }));
+
+                    Swal.close();
+
+                    if (data.ok) {
+
                         // Refrescar la tabla/página
-                        location.reload();
+
+                        if(data.respuestaMh.estado == "PROCESADO"){
+                            swal.fire({
+                                icon: 'success',
+                                title: 'Anulación procesada',
+                                text: 'La anulación ha sido enviada correctamente.'
+                            }).then(function() {
+                                $('#modalAnularVenta').modal('hide');
+                                window.location.href = "/ventas";
+                            });
+                        }else{
+                            swal.fire({
+                                icon: 'error',
+                                title: 'Anulación no procesada',
+                                text: 'Mensaje MH: ' + data.respuestaMh.descripcionMsg
+                            }).then(function() {
+                                //$('#modalAnularVenta').modal('hide');
+                                //window.location.href = "/ventas";
+                            });
+                        }
+
                     } else {
                         const text = await resp.text();
                         Swal.fire({

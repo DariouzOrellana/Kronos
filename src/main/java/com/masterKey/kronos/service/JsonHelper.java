@@ -6,14 +6,21 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.masterKey.kronos.model.*;
 import com.masterKey.kronos.service.ContingenciaService.ContingenciaService;
+import com.masterKey.kronos.service.InvalidacionService.InvalidacionService;
 import com.masterKey.kronos.service.ParametroService.ParametroService;
 import com.masterKey.kronos.service.TipoDocumentoService.TipoDocumentoService;
 import com.masterKey.kronos.service.VentaService.VentaService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class JsonHelper {
@@ -23,19 +30,249 @@ public class JsonHelper {
     private final TipoDocumentoService tipoDocumentoService;
     private final ContingenciaService contingenciaService;
     private final NumeroALetrasHelper numeroALetrasHelper;
+    private final InvalidacionService invalidacionService;
 
+    @Autowired
     public JsonHelper(ParametroService parametroService,
                       VentaService ventaService,
                       TipoDocumentoService tipoDocumentoService,
+                      NumeroALetrasHelper numeroALetrasHelper,
                       ContingenciaService contingenciaService,
-                      NumeroALetrasHelper numeroALetrasHelper) {
+                      InvalidacionService invalidacionService) {
         this.parametroService = parametroService;
         this.ventaService = ventaService;
         this.tipoDocumentoService = tipoDocumentoService;
         this.contingenciaService = contingenciaService;
         this.numeroALetrasHelper = numeroALetrasHelper;
+        this.invalidacionService = invalidacionService;
     }
 
+    public String identificarJson(Long idVenta) throws JsonProcessingException {
+        Venta venta = ventaService.findById(idVenta);
+        String idFac = parametroService.findById("ID_FACTURA").map(Parametro::getValor).orElse("01");
+        String idCff = parametroService.findById("ID_CCF").map(Parametro::getValor).orElse("03");
+        String idNc = parametroService.findById("ID_NC").map(Parametro::getValor).orElse("05");
+        String jsonGenerado = "";
+
+
+        if(idFac.equals(venta.getTipoDocumento().getId())){
+            jsonGenerado = generarJsonFac(idVenta);
+        }
+        if(idCff.equals(venta.getTipoDocumento().getId())){
+            jsonGenerado = generarJsonCff(idVenta);
+        }
+        if(idNc.equals(venta.getTipoDocumento().getId())){
+            jsonGenerado = generarJsonNc(idVenta);
+        }
+
+        if(jsonGenerado.equals("")){
+            jsonGenerado = "ERROR:::Metodo [identificarJson]";
+        }
+
+        return jsonGenerado;
+    }
+    public String generarInvalidacion_Json(Long idVenta){
+        try {
+            String jsonGenerado = "";
+
+            Invalidacion invalidacion = invalidacionService.findByVentaId(idVenta);
+
+            String fechaActual = LocalDate.now().toString();
+            String horaActual = LocalTime.now().withNano(0).toString();
+
+            ObjectMapper mapper = new ObjectMapper();
+            ObjectNode jsonApi = mapper.createObjectNode();
+
+            // Identificación
+            ObjectNode identificacion = mapper.createObjectNode();
+            identificacion.put("version", Integer.parseInt(parametroService.findById("MH_VERSION_INVALIDACION").map(Parametro::getValor).orElse("INVALIDACION")));
+            identificacion.put("ambiente", parametroService.findById("MH_AMBIENTE").map(Parametro::getValor).orElse("00"));
+            identificacion.put("codigoGeneracion", invalidacion.getCodigoGeneracion());
+            identificacion.put("fecAnula", fechaActual);
+            identificacion.put("horAnula", horaActual);
+
+            jsonApi.set("identificacion", identificacion);
+
+            ObjectNode emisor = mapper.createObjectNode();
+            emisor.put("nit", invalidacion.getVenta().getUsuario().getCaja().getSucursal().getEmpresa().getNit().replace("-", ""));
+            emisor.put("nombre", invalidacion.getVenta().getUsuario().getCaja().getSucursal().getEmpresa().getRepresentanteLegal());
+            emisor.put("tipoEstablecimiento", parametroService.findById("MH_ESTABLECIMIENTO").map(Parametro::getValor).orElse("01"));
+            emisor.put("nomEstablecimiento", invalidacion.getVenta().getUsuario().getCaja().getSucursal().getNombreSucursal());
+            emisor.put("codEstableMH", invalidacion.getVenta().getUsuario().getCaja().getSucursal().getEstablecimientoMh());
+            emisor.put("codEstable", invalidacion.getVenta().getUsuario().getCaja().getPuntoVentaMh());
+            emisor.put("codPuntoVentaMH", invalidacion.getVenta().getUsuario().getCaja().getSucursal().getEstablecimientoMh());
+            emisor.put("codPuntoVenta", invalidacion.getVenta().getUsuario().getCaja().getPuntoVentaMh());
+            emisor.put("telefono", invalidacion.getVenta().getUsuario().getCaja().getSucursal().getTelefono().replace("-", ""));
+            emisor.put("correo", invalidacion.getVenta().getUsuario().getCaja().getSucursal().getCorreo());
+
+            jsonApi.set("emisor", emisor);
+
+            ObjectNode documento = mapper.createObjectNode();
+            documento.put("tipoDte", invalidacion.getVenta().getTipoDocumento().getId());
+            documento.put("codigoGeneracion", invalidacion.getVenta().getCodigoGeneracion());
+            documento.put("selloRecibido", invalidacion.getVenta().getSelloMh());
+            documento.put("numeroControl", invalidacion.getVenta().getNumeroControl());
+            documento.put("fecEmi", invalidacion.getVenta().getFecha().toLocalDate().toString());
+            documento.put("montoIva", invalidacion.getVenta().getIva());
+            documento.putNull("codigoGeneracionR");
+
+            String idFac = parametroService.findById("ID_FACTURA").map(Parametro::getValor).orElse("01");
+            String idCff = parametroService.findById("ID_CFF").map(Parametro::getValor).orElse("03");
+            String idNc = parametroService.findById("ID_NC").map(Parametro::getValor).orElse("05");
+
+            if(invalidacion.getVenta().getTipoDocumento().getId().equals(idFac)){
+
+                if (invalidacion.getVenta().getDocFactura() == null || invalidacion.getVenta().getDocFactura().isEmpty()) {
+                    documento.putNull("tipoDocumento");
+                    documento.putNull("numDocumento");
+                } else {
+
+                    switch (invalidacion.getVenta().getTipoDocFactura()) {
+                        case "DUI":
+                            documento.put("tipoDocumento", "13");
+                            documento.put("numDocumento", invalidacion.getVenta().getDocFactura());
+                            break;
+                        case "NIT":
+                            documento.put("tipoDocumento", "36");
+                            documento.put("numDocumento", invalidacion.getVenta().getDocFactura());
+                            break;
+                        case "NRC":
+                            documento.put("tipoDocumento", "37");
+                            documento.put("numDocumento", invalidacion.getVenta().getDocFactura());
+                        default:
+                            return "ERROR";
+                    }
+
+                }
+
+                if (invalidacion.getVenta().getCorreo() == null) {
+                    documento.putNull("correo");
+                }else{
+                    documento.put("correo", invalidacion.getVenta().getCorreo());
+                }
+
+                documento.put("nombre", invalidacion.getVenta().getNombreFactura());
+                documento.putNull("telefono");
+
+            }else{
+                documento.put("tipoDocumento", "36");
+                documento.put("numDocumento", invalidacion.getVenta().getCliente().getNit().replace("-", ""));
+                documento.put("nombre", invalidacion.getVenta().getCliente().getNombreCliente());
+                documento.put("telefono", invalidacion.getVenta().getCliente().getTelefono().replace("-", ""));
+                documento.put("correo", invalidacion.getVenta().getCliente().getCorreo());
+            }
+
+
+
+            jsonApi.set("documento", documento);
+            ObjectNode motivo = mapper.createObjectNode();
+
+
+            motivo.put("tipoAnulacion", invalidacion.getTipoAnulacion().getId());
+            motivo.put("motivoAnulacion", invalidacion.getMotivoAnulacion());
+            motivo.put("nombreResponsable", invalidacion.getVenta().getUsuario().getCaja().getSucursal().getEmpresa().getRepresentanteLegal());
+            motivo.put("tipDocResponsable", "36");
+            motivo.put("numDocResponsable", invalidacion.getVenta().getUsuario().getCaja().getSucursal().getEmpresa().getNit().replace("-", ""));
+            motivo.put("nombreSolicita", invalidacion.getNombreSolicita());
+            motivo.put("tipDocSolicita", invalidacion.getTipDocSolicita());
+            motivo.put("numDocSolicita", invalidacion.getNumDocSolicita());
+
+            jsonApi.set("motivo", motivo);
+
+            jsonGenerado = jsonApi.toPrettyString();
+            //System.out.println(jsonApi.toPrettyString());
+            return jsonGenerado;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "ERROR";
+        }
+    }
+    public String generarContingenciaJson(Long idContingencia){
+        try {
+            Contingencia contingencia = contingenciaService.findById(idContingencia);
+            List<ContingenciaDetalle> contingenciaDetalles = contingencia.getDetalles();
+
+            String jsonGenerado = "";
+
+            String fechaActual = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            String horaActual = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+
+            ObjectMapper mapper = new ObjectMapper();
+            ObjectNode jsonApi = mapper.createObjectNode();
+
+
+
+            // Identificación
+            ObjectNode identificacion = mapper.createObjectNode();
+            identificacion.put("version", Integer.parseInt(parametroService.findById("MH_VERSION_CONTINGENCIA").map(Parametro::getValor).orElse("3")));
+            identificacion.put("ambiente", parametroService.findById("MH_AMBIENTE").map(Parametro::getValor).orElse("00"));
+            identificacion.put("codigoGeneracion", contingencia.getCodigoGeneracion());
+            identificacion.put("fTransmision", fechaActual);
+            identificacion.put("hTransmision", horaActual);
+
+            jsonApi.set("identificacion", identificacion);
+
+            if (contingenciaDetalles.size() == 0) {
+                System.out.println("Faltan los detalles para recorrer contingencia.");
+                return "ERROR";
+            }else{
+                int noItem = 0;
+                String nit_emisor = "";
+                String nombre_emisor = "";
+                String telefono_emisor = "";
+                String correo_emisor = "";
+                ArrayNode detalleDTE = jsonApi.putArray("detalleDTE");
+                //**************************************************************
+                //Recorriendo las ventas dadas por parametro
+                for (ContingenciaDetalle det : contingenciaDetalles) {
+                    noItem++;
+
+                    nit_emisor = det.getVenta().getUsuario().getCaja().getSucursal().getEmpresa().getNit().replace("-", "");
+                    nombre_emisor = det.getVenta().getUsuario().getCaja().getSucursal().getEmpresa().getRepresentanteLegal();
+                    telefono_emisor = det.getVenta().getUsuario().getCaja().getSucursal().getEmpresa().getTelefono().replace("-", "");
+                    correo_emisor = det.getVenta().getUsuario().getCaja().getSucursal().getEmpresa().getCorreo();
+
+                    ObjectNode item = mapper.createObjectNode();
+                    item.put("noItem", noItem);
+                    item.put("codigoGeneracion", det.getVenta().getCodigoGeneracion());
+                    item.put("tipoDoc", det.getVenta().getTipoDocumento().getId());
+
+                    detalleDTE.add(item);
+                }
+
+                // Identificación
+                ObjectNode emisor = mapper.createObjectNode();
+                emisor.put("nit", nit_emisor);
+                emisor.put("nombre", nombre_emisor);
+                emisor.put("nombreResponsable", nombre_emisor);
+                emisor.put("tipoDocResponsable", "36");
+                emisor.put("numeroDocResponsable", nit_emisor);
+                emisor.put("tipoEstablecimiento", parametroService.findById("MH_ESTABLECIMIENTO").map(Parametro::getValor).orElse("01"));
+                emisor.put("telefono", telefono_emisor);
+                emisor.put("correo", correo_emisor);
+                emisor.put("codEstableMH", parametroService.findById("MH_ESTABLE_DEFAULT").map(Parametro::getValor).orElse("M001"));
+                emisor.put("codPuntoVenta", parametroService.findById("MH_PUNTO_DEFAULT").map(Parametro::getValor).orElse("P001"));
+
+                jsonApi.set("emisor", emisor);
+
+
+                ObjectNode motivo = mapper.createObjectNode();
+                motivo.put("fInicio", contingencia.getfInicio().toString());
+                motivo.put("fFin", contingencia.getfFin().toString());
+                motivo.put("hInicio", "00:00:00");
+                motivo.put("hFin", "00:00:00");
+                motivo.put("tipoContingencia", contingencia.getTipoContingencia().getId());
+                motivo.put("motivoContingencia", contingencia.getMotivoContingencia());
+                jsonApi.set("motivo", motivo);
+
+                jsonGenerado = jsonApi.toPrettyString();
+                return jsonGenerado;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "ERROR";
+        }
+    }
     public String generarJsonFac(Long id) throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
         Venta venta = ventaService.findById(id);
@@ -116,7 +353,6 @@ public class JsonHelper {
 
         // ========== RECEPTOR ==========
         ObjectNode receptor = root.putObject("receptor");
-        receptor.putNull("nrc");
 
         String tipoDocumentoReceptor = "";
         switch (venta.getTipoDocFactura() == null ? "" : venta.getTipoDocFactura()){
@@ -126,7 +362,7 @@ public class JsonHelper {
             case "NIT":
                 tipoDocumentoReceptor = "36";
                 break;
-            case "OTRO":
+            case "NRC":
                 tipoDocumentoReceptor = "37";
                 break;
             default:
@@ -134,8 +370,19 @@ public class JsonHelper {
                 break;
         }
 
-        receptor.put("tipoDocumento", tipoDocumentoReceptor.isEmpty() ? null : tipoDocumentoReceptor);
-        receptor.put("numDocumento", venta.getDocFactura() == null ? null : venta.getDocFactura().replace("-", ""));
+        receptor.putNull("nrc");
+
+        if(venta.getTipoDocFactura() == null){
+            receptor.putNull("tipoDocumento");
+            receptor.putNull("numDocumento");
+        }else if(venta.getTipoDocFactura().equals("NRC")){
+            receptor.put("tipoDocumento", "36");
+            receptor.put("numDocumento", venta.getCliente().getNit().replace("-", ""));
+        }else{
+            receptor.put("tipoDocumento", tipoDocumentoReceptor.isEmpty() ? null : tipoDocumentoReceptor);
+            receptor.put("numDocumento", venta.getDocFactura() == null ? null : venta.getDocFactura().replace("-", ""));
+        }
+
         receptor.put("nombre", venta.getNombreFactura() == null ? "CONSUMIDOR FINAL" : venta.getNombreFactura());
         receptor.put("correo", venta.getCorreo() == null ? null : venta.getCorreo());
 

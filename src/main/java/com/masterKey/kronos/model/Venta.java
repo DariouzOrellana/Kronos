@@ -2,6 +2,8 @@ package com.masterKey.kronos.model;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
+import org.springframework.data.repository.cdi.Eager;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -10,7 +12,7 @@ import java.util.List;
 @Table(name = "VENTA")
 public class Venta {
 
-    @OneToMany(mappedBy = "venta")
+    @OneToMany(mappedBy = "venta", cascade = CascadeType.ALL,orphanRemoval = true, fetch = FetchType.EAGER)
     @JsonManagedReference
     private List<VentaDetalle> detalles;
 

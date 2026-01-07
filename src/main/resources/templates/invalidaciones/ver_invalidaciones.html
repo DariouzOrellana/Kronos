@@ -42,42 +42,55 @@
                                         <thead>
                                         <tr>
                                             <th>Acciones</th>
-                                            <th>ID</th>
                                             <th>Estado</th>
-                                            <th>Código generación</th>
-                                            <th>Sello</th>
+                                            <th>ID</th>
                                             <th>Fecha anulación</th>
-                                            <th>Nombre solicita</th>
                                             <th>Venta ID</th>
                                             <th>Doc.</th>
                                             <th>Fecha doc.</th>
                                             <th>Total</th>
+                                            <th>Nombre solicita</th>
+                                            <th>Código generación anulación</th>
+                                            <th>Sello anulación</th>
                                         </tr>
+
                                         </thead>
                                         <tbody>
                                         <tr th:each="inv : ${invalidaciones}">
                                             <td>
-                                                <a class="btn btn-sm btn-primary"
-                                                   th:if="${#strings.isEmpty(inv.selloInvalidacion)}"
-                                                   th:href="@{'/invalidaciones/' + ${inv.id} + '/enviar'}"
-                                                   title="Enviar invalidación">
-                                                    <i class="fas fa-paper-plane"></i>
+                                                <button type="button" class="btn btn-sm btn-secondary btn-enviar-correo" title="Enviar por correo"
+                                                        th:attr="data-venta-id=${inv.venta.id},data-email=${inv.venta.correo}">
+                                                    <i class="fas fa-envelope"></i>
+                                                </button>
+                                                <a th:href="@{'/ventas/' + ${inv.venta.id} + '/pdf'}" class="btn btn-sm btn-secondary" title="Ver PDF" target="_blank" rel="noopener noreferrer">
+                                                    <i class="fas fa-file-pdf"></i>
                                                 </a>
+                                                <a th:href="@{'/ventas/' + ${inv.venta.id} + '/json'}" class="btn btn-sm btn-secondary" title="Ver JSON" target="_blank" rel="noopener noreferrer">
+                                                    <i class="fas fa-code"></i>
+                                                </a>
+                                                <button
+                                                        th:if="${inv.selloInvalidacion == null || #strings.isEmpty(inv.selloInvalidacion)}"
+                                                        th:attr="data-venta-id=${inv.venta.id}"
+                                                        title="Enviar DTE"
+                                                        class="btn btn-sm btn-warning btn-anular-venta"
+                                                >
+                                                    <i class="fas fa-paper-plane"></i>
+                                                </button>
                                             </td>
-                                            <td th:text="${inv.id}"></td>
                                             <td>
                                                 <span class="badge"
                                                       th:text="${#strings.isEmpty(inv.selloInvalidacion) ? 'Pendiente' : 'Procesada'}"
-                                                      th:classappend="${#strings.isEmpty(inv.selloInvalidacion) ? 'badge-warning' : 'badge-success'}"></span>
+                                                      th:classappend="${#strings.isEmpty(inv.selloInvalidacion) ? 'badge-secondary' : 'badge-success'}"></span>
                                             </td>
-                                            <td th:text="${inv.codigoGeneracion}"></td>
-                                            <td th:text="${inv.selloInvalidacion}"></td>
+                                            <td th:text="${inv.id}"></td>
                                             <td th:text="${inv.fecAnula != null ? #temporals.format(inv.fecAnula, 'dd/MM/yyyy') : ''}"></td>
-                                            <td th:text="${inv.nombreSolicita}"></td>
                                             <td th:text="${inv.venta != null ? inv.venta.id : ''}"></td>
                                             <td th:text="${inv.venta != null ? inv.venta.tipoDocumento.getNombre() : ''}"></td>
                                             <td th:text="${inv.venta != null ? #temporals.format(inv.venta.fecha, 'dd/MM/yyyy') : ''}"></td>
                                             <td th:text="${inv.venta != null ? '$' + inv.venta.total : ''}"></td>
+                                            <td th:text="${inv.nombreSolicita}"></td>
+                                            <td th:text="${inv.codigoGeneracion}"></td>
+                                            <td th:text="${inv.selloInvalidacion}"></td>
                                         </tr>
                                         </tbody>
                                     </table>
@@ -98,7 +111,121 @@
     <footer th:replace="~{fragments.html :: footer}"></footer>
 </div>
 <div th:replace="~{fragments.html :: scripts}"></div>
+
+<!-- Modal: Enviar por correo -->
+<div class="modal fade" id="modalEnviarCorreo" tabindex="-1" role="dialog" aria-labelledby="modalEnviarCorreoLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEnviarCorreoLabel">Enviar por correo</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="formEnviarCorreo">
+                    <input type="hidden" id="correoVentaId" name="ventaId" value="">
+                    <div class="form-group">
+                        <label for="correoDestino">Correo destino</label>
+                        <input type="email" class="form-control" id="correoDestino" name="correo" placeholder="correo@dominio.com" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" id="btnModalEnviarCorreo">Enviar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 <script>
+
+    // Handler del botón Enviar (stub para que agregues tu lógica)
+    $('#btnModalEnviarCorreo').on('click', function(){
+        const ventaId = $('#correoVentaId').val();
+        const email = $('#correoDestino').val();
+        // TODO: Implementar lógica para enviar correo (fetch/POST)
+        console.log('Enviar correo - Venta ID:', ventaId, 'Email:', email);
+        // Cerrar modal tras stub
+        $('#modalEnviarCorreo').modal('hide');
+    });
+
+    // Abrir modal de correo, precargar ventaId y correo
+    $(document).on('click', '.btn-enviar-correo', function(){
+        const ventaId = $(this).data('venta-id');
+        const email = ($(this).data('email') || '').toString();
+        $('#correoVentaId').val(ventaId || '');
+        $('#correoDestino').val(email || '');
+        $('#modalEnviarCorreo').modal('show');
+    });
+
+    $(".btn-anular-venta").click(function () {
+        const ventaId = $(this).data('venta-id');
+        enviarDteVenta(ventaId);
+    });
+
+
+    async function enviarDteVenta(ventaId) {
+        try{
+            Swal.fire({
+                icon: 'info',
+                title: 'Procesando...',
+                text: 'Por favor espere',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            const resp = await fetch('/anulacion/'+ventaId+'/procesarDte', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await resp.json().catch(() => ({ ok: false, message: 'Respuesta inválida del servidor' }));
+
+            Swal.close();
+
+            if (data.ok) {
+
+                // Refrescar la tabla/página
+
+                if(data.respuestaMh.estado == "PROCESADO"){
+                    swal.fire({
+                        icon: 'success',
+                        title: 'Anulación procesada',
+                        text: 'La anulación ha sido enviada correctamente.'
+                    }).then(function() {
+                        window.location.reload();
+                    });
+                }else{
+                    swal.fire({
+                        icon: 'error',
+                        title: 'Anulación no procesada',
+                        text: 'Mensaje MH: ' + data.respuestaMh.descripcionMsg
+                    }).then(function() {
+                        //$('#modalAnularVenta').modal('hide');
+                        //window.location.href = "/ventas";
+                    });
+                }
+
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'No se pudo anular',
+                    text: (data.message ? data.message : 'Error desconocido')
+                });
+            }
+        } catch(e){
+            Swal.fire({
+                icon: 'error',
+                title: 'Error de red al anular',
+                text: (e && e.message ? e.message : '')
+            });
+        }
+    }
+
     $(function(){
         if (window.jQuery && $('#tblInvalidaciones').length) {
             // Forzar auto layout para permitir ajuste automático de ancho

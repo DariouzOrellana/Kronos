@@ -36,10 +36,10 @@
                                         </a>
                                     </div>
                                     <div class="mx-auto" th:if="${contingencia == null or contingencia.selloContingencia == null or #strings.isEmpty(contingencia.selloContingencia)}">
-                                        <a th:href="@{|/contingencias/${contingencia != null ? contingencia.id : 0}/enviar|}"
+                                        <button id="btnEnviarTop"
                                            class="btn btn-warning">
                                             <i class="fas fa-paper-plane"></i> Enviar contingencia
-                                        </a>
+                                        </button>
                                     </div>
                                     <div class="ml-auto"></div>
                                 </div>
@@ -115,22 +115,60 @@
                                     <table id="tablaVentasContDet" class="table table-bordered table-striped w-100 nowrap" style="width:100%">
                                         <thead>
                                             <tr>
-                                                <th>ID Venta</th>
+                                                <th>Acciones</th>
+                                                <th>ID</th>
+                                                <th>Estado</th>
                                                 <th>Cliente</th>
-                                                <th>Código generación</th>
-                                                <th>Tipo documento</th>
+                                                <th>Doc.</th>
                                                 <th>Fecha</th>
                                                 <th>Total</th>
+                                                <th>Código generación</th>
+                                                <th>Numero Control</th>
+                                                <th>Sello Mh</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             <tr th:each="d : ${contingencia != null ? contingencia.detalles : {}}">
+                                                <td>
+                                                    <button type="button" class="btn btn-sm btn-secondary btn-enviar-correo" title="Enviar por correo"
+                                                            th:attr="data-venta-id=${d.venta.id},data-email=${d.venta.correo}">
+                                                        <i class="fas fa-envelope"></i>
+                                                    </button>
+                                                    <a th:href="@{/ventas/generar_pdf(
+                                                        codigoGeneracion=${d.venta.codigoGeneracion},
+                                                        fecEmi=${#temporals.format(d.venta.fecha, 'yyyy-MM-dd')}
+                                                    )}"
+                                                       class="btn btn-sm btn-secondary" title="Ver PDF" target="_blank" rel="noopener noreferrer"
+                                                    >
+                                                        <i class="fas fa-file-pdf"></i>
+                                                    </a>
+                                                    <a th:href="@{/ventas/generar_json(
+                                                        codigoGeneracion=${d.venta.codigoGeneracion},
+                                                        fecEmi=${#temporals.format(d.venta.fecha, 'yyyy-MM-dd')}
+                                                    )}"
+                                                       class="btn btn-sm btn-secondary" title="Ver JSON" target="_blank" rel="noopener noreferrer"
+                                                    >
+                                                        <i class="fas fa-code"></i>
+                                                    </a>
+                                                    <button
+                                                            th:if="${contingencia.selloContingencia != null}"
+                                                            th:attr="data-venta-id=${d.venta.id}"
+                                                            title="Enviar DTE"
+                                                            class="btn btn-sm btn-primary btn-procesar-venta"
+                                                    >
+                                                        <i class="fas fa-paper-plane"></i>
+                                                    </button>
+                                                </td>
                                                 <td th:text="${d.venta != null ? d.venta.id : ''}"></td>
+                                                <td th:if="${d.venta.selloMh != null}" ><span class="badge badge-success">Procesada</span> </td>
+                                                <td th:if="${d.venta.selloMh == null}" ><span class="badge badge-secondary">Pendiente</span> </td>
                                                 <td th:text="${d.venta != null && d.venta.nombreFactura != null ? d.venta.nombreFactura : ''}"></td>
-                                                <td th:text="${d.venta != null ? d.venta.codigoGeneracion : ''}"></td>
                                                 <td th:text="${d.venta != null && d.venta.tipoDocumento != null ? d.venta.tipoDocumento.nombre : ''}"></td>
                                                 <td th:text="${d.venta != null ? #temporals.format(d.venta.fecha, 'dd/MM/yyyy') : ''}"></td>
                                                 <td th:text="${d.venta != null ? d.venta.total : ''}"></td>
+                                                <td th:text="${d.venta != null ? d.venta.codigoGeneracion : ''}"></td>
+                                                <td th:text="${d.venta != null ? d.venta.numeroControl : ''}"></td>
+                                                <td th:text="${d.venta != null ? d.venta.selloMh : ''}"></td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -143,11 +181,12 @@
                                 <div class="d-flex">
                                     <div class="mr-auto"></div>
                                     <div class="ml-auto d-flex align-items-center">
-                                        <a th:if="${contingencia == null or contingencia.selloContingencia == null or #strings.isEmpty(contingencia.selloContingencia)}"
-                                           th:href="@{|/contingencias/${contingencia != null ? contingencia.id : 0}/enviar|}"
-                                           class="btn btn-warning mr-2" id="btnEnviarBottom">
+                                        <button
+                                                th:if="${contingencia == null or contingencia.selloContingencia == null or #strings.isEmpty(contingencia.selloContingencia)}"
+                                                id="btnEnviarBottom"
+                                                class="btn btn-warning mr-2">
                                             <i class="fas fa-paper-plane"></i> Enviar contingencia
-                                        </a>
+                                        </button>
                                         <button type="submit" form="formEditarContingencia" class="btn btn-primary" id="btnGuardar"
                                                 th:disabled="${contingencia != null and contingencia.selloContingencia != null and !#strings.isEmpty(contingencia.selloContingencia)}">
                                             <i class="fas fa-save"></i> Guardar cambios
@@ -164,6 +203,229 @@
     <footer th:replace="~{fragments.html :: footer}"></footer>
 </div>
 <div th:replace="~{fragments.html :: scripts}"></div>
+
+<!-- Modal: Enviar por correo -->
+<div class="modal fade" id="modalEnviarCorreo" tabindex="-1" role="dialog" aria-labelledby="modalEnviarCorreoLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEnviarCorreoLabel">Enviar por correo</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="formEnviarCorreo">
+                    <input type="hidden" id="correoVentaId" name="ventaId" value="">
+                    <div class="form-group">
+                        <label for="correoDestino">Correo destino</label>
+                        <input type="email" class="form-control" id="correoDestino" name="correo" placeholder="correo@dominio.com" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" id="btnModalEnviarCorreo">Enviar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $("#btnEnviarTop").click(function () {
+        enviarDteContingencia($('#contingenciaId').val());
+    });
+
+    $("#btnEnviarBottom").click(function () {
+        enviarDteContingencia($('#contingenciaId').val());
+    });
+
+    async function enviarDteContingencia(idContingencia) {
+        try {
+            Swal.fire({
+                icon: 'info',
+                title: 'Procesando...',
+                text: 'Por favor espere',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            const resp = await fetch("./" + idContingencia + "/procesarDte", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (!resp.ok) {
+                throw new Error('Error ' + resp.status);
+            }
+
+            const data = await resp.json();
+            Swal.close();
+
+            if (data.ok) {
+
+                if (data.respuestaMh.estado === "PROCESADO") {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Contingencia procesada',
+                        text: 'Proceder a procesar las ventas en contingencia'
+                    }).then(() => {
+                        window.location.reload();
+                    });
+
+                } else {
+                    const observaciones = (data.respuestaMh.observaciones || []).join("<br>");
+                    const mensaje = data.respuestaMh.mensaje || '';
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Contingencia no procesada',
+                        html: `<b>Mensaje MH:</b> ${mensaje}<br><br><b>Observaciones:</b><br>${observaciones || 'Sin observaciones'}`
+                    });
+
+                }
+
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'No se pudo anular',
+                    text: data.message || 'Error desconocido'
+                });
+            }
+
+        } catch (e) {
+            Swal.close();
+            Swal.fire({
+                icon: 'error',
+                title: 'Error de red al anular',
+                text: e.message || ''
+            });
+        }
+    }
+
+    // Procesar venta
+    $(document).on('click', '.btn-procesar-venta', function(){
+        const ventaId = $(this).data('venta-id');
+        enviarVenta(ventaId);
+
+    });
+
+    // Enviar por AJAX al backend y manejar ok/message
+    async function enviarVenta(idVenta) {
+        try {
+            Swal.fire({
+                icon: 'info',
+                title: 'Procesando...',
+                text: 'Por favor espere',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            const resp = await fetch('../ventas/'+idVenta+'/procesarDte', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await resp.json().catch(() => ({ ok: false, message: 'Respuesta inválida del servidor' }));
+            Swal.close();
+            if(data.ok){
+                //const respuestaMH = JSON.parse(data.respuestaMh);
+                if(data.respuestaMh.estado == "PROCESADO"){
+                    swal.fire({
+                        icon: 'success',
+                        title: 'Venta enviada!',
+                        text: 'La venta ha sido enviada correctamente.'
+                    }).then(function() {
+                        window.location.reload();
+                    });
+                }else{
+                    swal.fire({
+                        icon: 'error',
+                        title: 'Venta #'+idVenta+' con error MH',
+                        text: data.respuestaMh.descripcionMsg
+                    }).then(function() {
+                        //window.location.href = "/ventas";
+                    });
+                }
+            }else{
+                swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Error al guardar la venta: ' + data.message
+                });
+            }
+
+        } catch (err) {
+            console.error('Error enviando venta', err);
+            if (window.Swal && typeof Swal.fire === 'function') {
+                await Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo procesar en el servidor' });
+            } else {
+                alert('No se pudo procesar en el servidor');
+            }
+            return false;
+        }
+    }
+
+    $(document).on('click', '.btn-enviar-correo', function(){
+        const ventaId = $(this).data('venta-id');
+        const email = ($(this).data('email') || '').toString();
+        $('#correoVentaId').val(ventaId || '');
+        $('#correoDestino').val(email || '');
+        $('#modalEnviarCorreo').modal('show');
+    });
+
+    // Handler del botón Enviar (stub para que agregues tu lógica)
+    $('#btnModalEnviarCorreo').on('click', function(){
+        const ventaId = $('#correoVentaId').val();
+        const email = $('#correoDestino').val();
+
+        Swal.fire({
+            title: 'Enviando correo...',
+            text: 'Por favor espere',
+            icon: 'info',
+            allowOutsideClick: false,
+            didOpen: Swal.showLoading
+        });
+
+        const formData = new FormData();
+        formData.append('idVenta', ventaId);
+        formData.append('correoDestinatario', email);
+
+        fetch('../ventas/enviar-correo', {
+            method: 'POST',
+            body: formData
+        })
+            .then(async response => {
+                const text = await response.text();
+
+                if (!response.ok) {
+                    throw new Error(text || 'Error al enviar el correo');
+                }
+
+                return text;
+            })
+            .then(mensaje => {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Correo en proceso',
+                    text: mensaje
+                });
+            })
+            .catch(error => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.message || 'Hubo un error enviando el correo'
+                });
+            });
+
+
+        //$('#modalEnviarCorreo').modal('hide');
+    });
+</script>
+
 <script>
     (function(){
         const form = document.getElementById('formEditarContingencia');
@@ -214,9 +476,11 @@
                 if (r.ok && data && data.ok){
                     if (window.Swal && Swal.fire){
                         Swal.fire({ icon:'success', title:'Actualizado', text:data.message || 'Operación exitosa' })
-                            .then(() => { window.location.href = '/contingencias'; });
+                            .then(() => {
+                                //window.location.href = '/contingencias';
+                            });
                     } else {
-                        window.location.href = '/contingencias';
+                        //window.location.href = '/contingencias';
                     }
                 } else {
                     const msg = (data && data.message) ? data.message : 'Error al actualizar';

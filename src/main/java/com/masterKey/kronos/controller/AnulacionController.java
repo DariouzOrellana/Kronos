@@ -1,9 +1,12 @@
 package com.masterKey.kronos.controller;
 
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.masterKey.kronos.model.*;
 import com.masterKey.kronos.service.HelperService.HelperService;
 import com.masterKey.kronos.service.InvalidacionService.InvalidacionService;
+import com.masterKey.kronos.service.SenderHelper;
 import com.masterKey.kronos.service.TipoInvalidacionService.TipoInvalidacionService;
 import com.masterKey.kronos.service.VentaService.VentaService;
 import jakarta.servlet.http.HttpSession;
@@ -27,17 +30,20 @@ public class AnulacionController extends BaseController{
     private final VentaService ventaService;
     private final TipoInvalidacionService tipoInvalidacionService;
     private final InvalidacionService invalidacionService;
+    private final SenderHelper senderHelper;
 
     @Autowired
     public AnulacionController(
             HelperService helperService,
             VentaService ventaService,
             TipoInvalidacionService tipoInvalidacionService,
-            InvalidacionService invalidacionService) {
+            InvalidacionService invalidacionService,
+            SenderHelper senderHelper) {
         this.helperService = helperService;
         this.ventaService = ventaService;
         this.tipoInvalidacionService = tipoInvalidacionService;
         this.invalidacionService = invalidacionService;
+        this.senderHelper = senderHelper;
     }
 
     @GetMapping()
@@ -50,6 +56,29 @@ public class AnulacionController extends BaseController{
 
 
         return "invalidaciones/ver_invalidaciones";
+    }
+
+    @PostMapping("/{id}/procesarDte")
+    @ResponseBody
+    public ResponseEntity<?> procesarAnulacion(
+            @PathVariable("id") Long id,
+            HttpSession session
+    ){
+        Map<String, Object> res = new HashMap<>();
+        try {
+            String respuesta = senderHelper.enviarAnulacion(id);
+            ObjectMapper mapper = new ObjectMapper();
+            Map<String, Object> respuestaObj = mapper.readValue(respuesta, new TypeReference<>() {});
+            res.put("ok", true);
+            res.put("message", "Anulación procesada exitosamente");
+            res.put("respuestaMh", respuestaObj);
+
+        }catch ( Exception ex ){
+            res.put("ok", false);
+            res.put("message", "Error al enviar la Anulación: " + ex.getMessage());
+            return ResponseEntity.internalServerError().body(res);
+        }
+        return ResponseEntity.ok(res);
     }
 
     @PostMapping("/guardar")
@@ -125,10 +154,18 @@ public class AnulacionController extends BaseController{
             invalidacion.setTipDocSolicita(tipoDocSolicita);
             invalidacion.setNumDocSolicita(payload.get("num_doc_solicita").toString());
             invalidacion.setFecAnula(LocalDate.now());
-            invalidacionService.save(invalidacion);
+            Invalidacion inv = invalidacionService.save(invalidacion);
+
+            String respuestaMh = senderHelper.enviarAnulacion(ventaId);
+
+            ObjectMapper mapper = new ObjectMapper();
+            Map<String, Object> respuestaMhObj =
+                    mapper.readValue(respuestaMh, new TypeReference<>() {});
 
             res.put("ok", true);
             res.put("message", "Anulacion guardada exitosamente");
+            res.put("respuestaMh", respuestaMhObj);
+
             return ResponseEntity.ok(res);
         } catch (Exception ex) {
             res.put("ok", false);

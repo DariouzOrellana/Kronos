@@ -1,51 +1,399 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments.html :: head}"></head>
+<head th:replace="fragments.html :: head"></head>
 <body class="hold-transition sidebar-mini layout-fixed">
 <div class="wrapper">
-    <div th:replace="~{fragments.html :: menu}"></div>
+  <div th:replace="fragments.html :: menu"></div>
 
-    <!-- Content Wrapper. Contains page content -->
-    <div class="content-wrapper">
-        <!-- Content Header (Page header) -->
-        <div class="content-header">
-            <div class="container-fluid">
-                <div class="row mb-2">
-                    <div class="col-sm-6">
-                        <h1 class="m-0">Dashboard</h1>
-                    </div><!-- /.col -->
-                    <div class="col-sm-6">
-                        <ol class="breadcrumb float-sm-right">
-                            <li class="breadcrumb-item"><a href="/home">Home</a></li>
-                            <li class="breadcrumb-item active">Dashboard</li>
-                        </ol>
-                    </div><!-- /.col -->
-                </div><!-- /.row -->
-            </div><!-- /.container-fluid -->
-        </div>
-        <!-- /.content-header -->
+  <!-- Content Wrapper. Contains page content -->
+  <div class="content-wrapper">
+    <!-- Content Header (Page header) -->
+    <div class="content-header">
+      <div class="container-fluid">
+        <style>
+          /* Aplica scroll vertical cuando haya muchas filas */
+          .table-clip-5 { max-height: 360px; overflow-y: auto; }
 
-        <!-- Main content -->
-        <section class="content">
-            <div class="container-fluid">
+          /* Chart canvas responsive: definir tamaños por defecto y reducir en pantallas pequeñas */
+          .chart-canvas { min-height: 300px; height: 300px; max-height: 400px; width: 100%; }
+          @media (max-width: 768px) {
+            .chart-canvas { min-height: 220px; height: 220px; max-height: 320px; }
+            .card-header .card-title { font-size: 1rem; }
+          }
+          @media (max-width: 576px) {
+            .chart-canvas { min-height: 160px; height: 160px; max-height: 220px; }
+            .card-header .card-title { font-size: .95rem; }
+            .card { margin-bottom: .75rem; }
+            /* Ajustar badges y botones para menor espacio */
+            .card-header .badge { font-size: .85rem; }
+          }
+        </style>
+        <div class="row mb-2">
+          <div class="col-sm-6">
+            <h1 class="m-0">
 
-                <div class="row">
-                    <div class="col">
-                    <h1 th:text="${iva}"></h1>
-
-                    </div>
-                </div>
-                <!-- /.row -->
-
-            </div><!-- /.container-fluid -->
-        </section>
-        <!-- /.content -->
+            </h1>
+          </div><!-- /.col -->
+          <div class="col-sm-6">
+            <ol class="breadcrumb float-sm-right">
+              <li class="breadcrumb-item"><a href="/home">Home</a></li>
+            </ol>
+          </div><!-- /.col -->
+        </div><!-- /.row -->
+      </div><!-- /.container-fluid -->
     </div>
+    <!-- /.content-header -->
+
+    <!-- Main content -->
+    <section class="content">
+      <div class="container-fluid">
+        <!-- Si es ADMIN: Filtro de fecha y Ventas por cliente (estado 'P') -->
+        <div th:if="${userAuth != null and userAuth.rol.nombreRol == 'ADMIN'}">
+          <div class="row">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div class="d-flex align-items-center gap-2">
+                  <h3 class="card-title mb-0 mr-3">Ventas por cliente</h3>
+                  <div class="input-group" style="width: 240px;">
+                    <div class="input-group-prepend">
+                      <span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
+                    </div>
+                    <input type="date" id="fechaFiltro" name="fecha" class="form-control" th:value="${fechaSeleccionada}">
+                  </div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                  <h5 class="mb-0 mr-2">Total vendido: <span class="badge badge-primary"><span style="white-space:nowrap" th:text="${'$ ' + #numbers.formatDecimal(totalVendidoHoy, 1, 'COMMA', 2, 'POINT')}"></span></span></h5>
+                  <button type="button" class="btn btn-secondary btn-sm" title="Recargar" onclick="window.location.reload()">
+                    <i class="fas fa-sync"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="card-body table-responsive p-0" th:classappend="${ventasClienteHoy != null and #lists.size(ventasClienteHoy) > 5} ? ' table-clip-5' : ''">
+                <table class="table table-hover">
+                  <thead>
+                    <tr>
+                      <th>Cliente</th>
+                      <th class="text-right"># Ventas</th>
+                      <th class="text-right">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr th:each="item : ${ventasClienteHoy}">
+                      <td th:text="${item.nombre}">Cliente</td>
+                      <td class="text-right" th:text="${item.cantidad}">0</td>
+                      <td class="text-right"><span style="white-space:nowrap" th:text="${'$ ' + #numbers.formatDecimal(item.total, 1, 'COMMA', 2, 'POINT')}">$ 0.00</span></td>
+                    </tr>
+                    <tr th:if="${ventasClienteHoy == null or #lists.isEmpty(ventasClienteHoy)}">
+                      <td colspan="3" class="text-center">Sin ventas registradas hoy</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          </div>
+
+          <!-- Charts row -->
+          <div class="row">
+          <div class="col-12 col-md-6">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Comparativo de ventas - <span th:text="${fechaSeleccionada != null && !#strings.isEmpty(fechaSeleccionada) ? fechaSeleccionada : 'hoy'}"></span></h3>
+              </div>
+              <div class="card-body">
+                <canvas id="chartComparativa" class="chart-canvas"></canvas>
+              </div>
+            </div>
+          </div>
+          <div class="col-12 col-md-6">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Tipos de DTE emitidos - <span th:text="${fechaSeleccionada != null && !#strings.isEmpty(fechaSeleccionada) ? fechaSeleccionada : 'hoy'}"></span></h3>
+              </div>
+              <div class="card-body">
+                <canvas id="chartTiposDte" class="chart-canvas"></canvas>
+              </div>
+            </div>
+          </div>
+          </div>
+          <!-- /.charts row -->
+          <!-- Ventas por usuario (pastel) -->
+          <div class="row mt-3">
+            <div class="col-12 col-md-6">
+              <div class="card">
+                <div class="card-header">
+                  <h3 class="card-title">Ventas por usuario - <span th:text="${fechaSeleccionada != null && !#strings.isEmpty(fechaSeleccionada) ? fechaSeleccionada : 'hoy'}"></span></h3>
+                </div>
+                <div class="card-body">
+                  <canvas id="chartVentasPorUsuario" class="chart-canvas" style="min-height:250px; height:250px; max-height:320px"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Si NO es ADMIN: mostrar sólo las ventas del usuario en la fecha actual/seleccionada -->
+        <div th:unless="${userAuth != null and userAuth.rol.nombreRol == 'ADMIN'}">
+          <div class="row">
+            <div class="col-12">
+              <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <h3 class="card-title">Mis ventas - <span th:text="${fechaSeleccionada != null && !#strings.isEmpty(fechaSeleccionada) ? fechaSeleccionada : T(java.time.LocalDate).now().toString()}">hoy</span></h3>
+                </div>
+                <div class="card-body table-responsive p-0">
+                  <table class="table table-hover">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Fecha</th>
+                        <th>Tipo DTE</th>
+                        <th class="text-right">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr th:each="v,iterStat : ${ventasUsuarioHoy}">
+                        <td th:text="${v.id}">1</td>
+                        <td th:text="${#temporals.format(v.fecha, 'dd/MM/yyyy HH:mm')}">01/01/2026 10:00</td>
+                        <td th:text="${v.tipoDocumento != null ? v.tipoDocumento.nombre : '-'}">Factura</td>
+                        <td class="text-right" th:text="${'$ ' + #numbers.formatDecimal(v.total, 1, 'COMMA', 2, 'POINT')}">$ 0.00</td>
+                      </tr>
+                      <tr th:if="${ventasUsuarioHoy == null or #lists.isEmpty(ventasUsuarioHoy)}">
+                        <td colspan="4" class="text-center">No hay ventas registradas en la fecha seleccionada</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /.container-fluid -->
+    </section>
+    <!-- /.content -->
+  </div>
 
 
 
-    <footer th:replace="~{fragments.html :: footer}"></footer>
+  <footer th:replace="fragments.html :: footer"></footer>
 </div>
-<div th:replace="~{fragments.html :: scripts}"></div>
+<div th:replace="fragments.html :: scripts"></div>
+<script>
+  // Función para actualizar la hora
+  function updateClock() {
+      var clockEl = document.getElementById('clock');
+      if (!clockEl) return;
+
+      var now = new Date();
+      var optionsDate = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      var optionsTime = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
+      var formattedDate = now.toLocaleDateString('es-ES', optionsDate);
+      var formattedTime = now.toLocaleTimeString('es-ES', optionsTime);
+      clockEl.innerText = 'Dashboard del día ' + formattedDate + ' ' + formattedTime;
+  }
+
+  // Inicializar/actualizar solo si existe el elemento
+  if (document.getElementById('clock')) {
+    setInterval(updateClock, 1000);
+    updateClock();
+  }
+</script>
+
+<script>
+  // Manejo del filtro de fecha: recarga la página con el parámetro ?fecha=YYYY-MM-DD
+  (function(){
+    var input = document.getElementById('fechaFiltro');
+    if (!input) return;
+    input.addEventListener('change', function(){
+      var params = new URLSearchParams(window.location.search);
+      if (input.value && input.value.trim() !== '') {
+        params.set('fecha', input.value);
+      } else {
+        params.delete('fecha');
+      }
+      var base = window.location.pathname === '/' ? '/home' : window.location.pathname;
+      window.location.href = base + '?' + params.toString();
+    });
+  })();
+</script>
+
+<script th:inline="javascript">
+  // Datos desde el modelo
+  const ventaTotal     = /*[[${ventaTotal}]]*/ 0;
+  const ventaConSello  = /*[[${ventaConSello}]]*/ 0;
+  const ventaSinSello  = /*[[${ventaSinSello}]]*/ 0;
+  const ventaConting   = /*[[${ventaContingencia}]]*/ 0;
+  const tiposDteLabels = /*[[${tiposDteLabels}]]*/ [];
+  const tiposDteValues = /*[[${tiposDteValues}]]*/ [];
+  const tiposDteTotals = /*[[${tiposDteTotals}]]*/ [];
+  const ventaPorUsuarioLabels = /*[[${ventaPorUsuarioLabels}]]*/ [];
+  const ventaPorUsuarioTotals = /*[[${ventaPorUsuarioTotals}]]*/ [];
+
+  // Paleta de colores
+  const colors = {
+    conSello:    '#28a745',
+    sinSello:    '#dc3545',
+    contingencia:'#ffc107',
+    total:       '#17a2b8'
+  };
+
+  // Gráfico comparativo (barras)
+  (function(){
+    const ctx = document.getElementById('chartComparativa');
+    if (!ctx || typeof Chart === 'undefined') return;
+
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['Totales', 'Con sello', 'Sin sello', 'Contingencia'],
+        datasets: [{
+          label: 'Cantidad',
+          data: [ventaTotal, ventaConSello, ventaSinSello, ventaConting],
+          backgroundColor: [colors.total, colors.conSello, colors.sinSello, colors.contingencia]
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          xAxes: [{
+            ticks: { autoSkip: false }
+          }],
+          yAxes: [{
+            ticks: { beginAtZero: true, precision: 0 }
+          }]
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: { enabled: true }
+        }
+      }
+    });
+  })();
+
+  // Gráfico ventas por usuario (pastel)
+  (function(){
+    const ctx = document.getElementById('chartVentasPorUsuario');
+    if (!ctx || typeof Chart === 'undefined') return;
+    const labels = (ventaPorUsuarioLabels !== null && ventaPorUsuarioLabels !== undefined) ? ventaPorUsuarioLabels : [];
+    const data = (ventaPorUsuarioTotals !== null && ventaPorUsuarioTotals !== undefined) ? ventaPorUsuarioTotals : [];
+    // Generar paleta HSL para usuarios
+    const userColors = labels.map((_, i) => `hsl(${Math.round((i*360)/(labels.length||1))}, 70%, 50%)`);
+    new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: data,
+          backgroundColor: userColors,
+          borderColor: userColors.map(c => c.replace(', 50%)', ', 40%)')),
+          hoverBackgroundColor: userColors,
+          hoverBorderColor: userColors.map(c => c.replace(', 50%)', ', 40%)')),
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'right' } }
+      }
+    });
+  })();
+
+  // Gráfico tipos de DTE (barras horizontales si hay muchos tipos)
+  (function(){
+    const ctx = document.getElementById('chartTiposDte');
+    if (!ctx || typeof Chart === 'undefined') return;
+
+    // Paleta distinta a comparativa: colores por etiqueta y generación automática si no existe
+    const colorPorEtiqueta = {
+      'Factura': '#8e44ad',
+      'Crédito Fiscal': '#e67e22',
+      'Nota Crédito': '#2ecc71'
+    };
+
+    // Genera colores HSL distribuidos si no hay uno definido
+    const defaultColors = tiposDteLabels.map((_, i) => {
+      const hue = Math.round((i * 360) / (tiposDteLabels.length || 1));
+      return `hsl(${hue}, 70%, 50%)`;
+    });
+
+    const background = tiposDteLabels.map((label, i) => colorPorEtiqueta[label] || defaultColors[i]);
+    const borderColors = background.map(c => {
+      // si es hsl, oscurecer ligeramente
+      if (c.startsWith('hsl')) return c.replace(', 50%)', ', 40%)');
+      return c;
+    });
+
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: tiposDteLabels,
+        datasets: [
+          {
+            label: 'Cantidad',
+            data: tiposDteValues,
+            backgroundColor: background,
+            borderColor: borderColors,
+            hoverBackgroundColor: background,
+            hoverBorderColor: borderColors,
+            borderWidth: 1,
+            yAxisID: 'y1'
+          },
+          {
+            label: 'Total vendido ($)',
+            data: tiposDteTotals,
+            type: 'line',
+            borderColor: '#34495e',
+            backgroundColor: 'rgba(52, 73, 94, 0.15)',
+            lineTension: 0.2,
+            yAxisID: 'y2'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          xAxes: [{
+            ticks: { autoSkip: false }
+          }],
+          yAxes: [
+            { id: 'y1', type: 'linear', position: 'left', ticks: { beginAtZero: true, precision: 0 } },
+            { id: 'y2', type: 'linear', position: 'right', gridLines: { drawOnChartArea: false }, ticks: { beginAtZero: true } }
+          ]
+        },
+        tooltips: {
+          mode: 'index',
+          intersect: false,
+          callbacks: {
+            label: function(tooltipItem, data) {
+              var dsLabel = data.datasets[tooltipItem.datasetIndex].label || '';
+              var raw = tooltipItem.yLabel !== undefined ? tooltipItem.yLabel : tooltipItem.value;
+              if (tooltipItem.datasetIndex === 1) {
+                var num = Number(raw);
+                if (isNaN(num)) return dsLabel + ': $ 0.00';
+                try {
+                  return dsLabel + ': $ ' + new Intl.NumberFormat('es-SV', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num);
+                } catch (e) {
+                  return dsLabel + ': $ ' + num.toFixed(2);
+                }
+              }
+              return dsLabel + ': ' + raw;
+            }
+          }
+        },
+        plugins: {
+          legend: { display: true },
+          tooltip: { enabled: true }
+        }
+      }
+    });
+  })();
+</script>
+
+
+
 </body>
 </html>

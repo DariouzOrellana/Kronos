@@ -1,8 +1,11 @@
 package com.masterKey.kronos.controller;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.masterKey.kronos.model.*;
 import com.masterKey.kronos.service.ContingenciaService.ContingenciaService;
 import com.masterKey.kronos.service.ParametroService.ParametroService;
+import com.masterKey.kronos.service.SenderHelper;
 import com.masterKey.kronos.service.TipoContingenciaService.TipoContingenciaService;
 import com.masterKey.kronos.service.VentaService.VentaService;
 import com.masterKey.kronos.repository.ContingenciaDetalleRepository;
@@ -11,10 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -30,6 +30,7 @@ public class ContingenciaController extends BaseController{
     private final VentaService ventaService;
     private final ParametroService parametroService;
     private final ContingenciaDetalleRepository contingenciaDetalleRepository;
+    private final SenderHelper senderHelper;
 
     @Autowired
     public ContingenciaController(
@@ -37,12 +38,14 @@ public class ContingenciaController extends BaseController{
             TipoContingenciaService tipoContingenciaService,
             VentaService ventaService,
             ParametroService parametroService,
-            ContingenciaDetalleRepository contingenciaDetalleRepository) {
+            ContingenciaDetalleRepository contingenciaDetalleRepository,
+            SenderHelper senderHelper) {
         this.contingenciaService = contingenciaService;
         this.tipoContingenciaService = tipoContingenciaService;
         this.ventaService = ventaService;
         this.parametroService = parametroService;
         this.contingenciaDetalleRepository = contingenciaDetalleRepository;
+        this.senderHelper = senderHelper;
     }
 
     @PostMapping("/{id}/actualizar")
@@ -90,6 +93,29 @@ public class ContingenciaController extends BaseController{
             res.put("message", "Error al actualizar: " + ex.getMessage());
             return ResponseEntity.internalServerError().body(res);
         }
+    }
+
+    @PostMapping("/{id}/procesarDte")
+    @ResponseBody
+    public ResponseEntity<?> procesarContingencia(
+            @PathVariable("id") Long id,
+            HttpSession session
+    ){
+        Map<String, Object> res = new HashMap<>();
+        try {
+            String respuesta = senderHelper.enviarContingencia(id);
+            ObjectMapper mapper = new ObjectMapper();
+            Map<String, Object> respuestaObj = mapper.readValue(respuesta, new TypeReference<>() {});
+            res.put("ok", true);
+            res.put("message", "Contingencia procesada exitosamente");
+            res.put("respuestaMh", respuestaObj);
+
+        }catch ( Exception ex ){
+            res.put("ok", false);
+            res.put("message", "Error al enviar la contingencia: " + ex.getMessage());
+            return ResponseEntity.internalServerError().body(res);
+        }
+        return ResponseEntity.ok(res);
     }
 
     @RequestMapping
@@ -182,10 +208,12 @@ public class ContingenciaController extends BaseController{
             }
 
             // Construir entidad Contingencia
+            String uid = UUID.randomUUID().toString().toUpperCase();
             Contingencia cont = new Contingencia();
             cont.setfInicio(fInicio);
             cont.setfFin(fFin);
             cont.setMotivoContingencia(String.valueOf(motivoRaw));
+            cont.setCodigoGeneracion(uid);
             tipoContingenciaService.findById(tipoId).ifPresent(cont::setTipoContingencia);
 
             // Guardar encabezado
@@ -199,6 +227,10 @@ public class ContingenciaController extends BaseController{
                 d.setContingencia(guardada);
                 d.setVenta(v);
                 detalles.add(d);
+
+                v.setContingencia(1);
+                v.setCodigoGeneracionContingencia(uid);
+                ventaService.save(v);
                 // Opcional: marcar venta en contingencia
                 // if (v.getContingencia() == null || v.getContingencia() == 0) { v.setContingencia(1); ventaService.save(v); }
             }

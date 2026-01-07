@@ -18,8 +18,8 @@ public class InvalidacionServiceImpl implements InvalidacionService{
     }
 
     @Override
-    public void save(Invalidacion invalidacion) {
-        invalidacionRepository.save(invalidacion);
+    public Invalidacion save(Invalidacion invalidacion) {
+        return invalidacionRepository.save(invalidacion);
     }
 
     @Override
