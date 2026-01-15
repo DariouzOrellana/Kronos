@@ -63,11 +63,11 @@
                                         <tr th:each="e : ${empresas}">
                                             <td>
                                                 <a th:href="@{'/empresas/' + ${e.id} + '/editar'}" class="btn btn-primary btn-icon" title="Editar" aria-label="Editar"><i class="fas fa-edit"></i></a>
-                                                <form th:action="@{'/empresas/' + ${e.id} + '/eliminar'}" method="post" class="js-delete-form d-inline-block ml-1">
+                                                <!--<form th:action="@{'/empresas/' + ${e.id} + '/eliminar'}" method="post" class="js-delete-form d-inline-block ml-1">
                                                     <button type="submit" class="btn btn-danger btn-icon" title="Eliminar" aria-label="Eliminar">
                                                         <i class="fas fa-trash"></i>
                                                     </button>
-                                                </form>
+                                                </form>-->
                                             </td>
                                             <td th:text="${e.id}"></td>
                                             <td class="text-center">

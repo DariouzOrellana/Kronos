@@ -129,29 +129,35 @@
                                         </thead>
                                         <tbody>
                                             <tr th:each="d : ${contingencia != null ? contingencia.detalles : {}}">
-                                                <td>
-                                                    <button type="button" class="btn btn-sm btn-secondary btn-enviar-correo" title="Enviar por correo"
-                                                            th:attr="data-venta-id=${d.venta.id},data-email=${d.venta.correo}">
-                                                        <i class="fas fa-envelope"></i>
+                                                <td >
+                                                    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                                                        <i class="fas fa-th"></i>
                                                     </button>
-                                                    <a th:href="@{/ventas/generar_pdf(
+                                                    <div class="dropdown-menu">
+                                                        <button type="button" class="btn btn-sm btn-secondary btn-enviar-correo" title="Enviar por correo"
+                                                                th:attr="data-venta-id=${d.venta.id},data-email=${d.venta.correo}">
+                                                            <i class="fas fa-envelope"></i>
+                                                        </button>
+                                                        <a th:href="@{/ventas/generar_pdf(
                                                         codigoGeneracion=${d.venta.codigoGeneracion},
                                                         fecEmi=${#temporals.format(d.venta.fecha, 'yyyy-MM-dd')}
                                                     )}"
-                                                       class="btn btn-sm btn-secondary" title="Ver PDF" target="_blank" rel="noopener noreferrer"
-                                                    >
-                                                        <i class="fas fa-file-pdf"></i>
-                                                    </a>
-                                                    <a th:href="@{/ventas/generar_json(
+                                                           class="btn btn-sm btn-secondary" title="Ver PDF" target="_blank" rel="noopener noreferrer"
+                                                        >
+                                                            <i class="fas fa-file-pdf"></i>
+                                                        </a>
+                                                        <a th:href="@{/ventas/generar_json(
                                                         codigoGeneracion=${d.venta.codigoGeneracion},
                                                         fecEmi=${#temporals.format(d.venta.fecha, 'yyyy-MM-dd')}
                                                     )}"
-                                                       class="btn btn-sm btn-secondary" title="Ver JSON" target="_blank" rel="noopener noreferrer"
-                                                    >
-                                                        <i class="fas fa-code"></i>
-                                                    </a>
+                                                           class="btn btn-sm btn-secondary" title="Ver JSON" target="_blank" rel="noopener noreferrer"
+                                                        >
+                                                            <i class="fas fa-code"></i>
+                                                        </a>
+                                                    </div>
+
                                                     <button
-                                                            th:if="${contingencia.selloContingencia != null}"
+                                                            th:if="${contingencia.selloContingencia != null and d.venta.selloMh == null}"
                                                             th:attr="data-venta-id=${d.venta.id}"
                                                             title="Enviar DTE"
                                                             class="btn btn-sm btn-primary btn-procesar-venta"

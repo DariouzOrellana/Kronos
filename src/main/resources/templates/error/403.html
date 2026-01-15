@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:with="title='Error 403 | Acceso denegado'">
+<head th:replace="fragments :: head"></head>
+<body class="hold-transition error-page">
+
+<div class="error-page">
+  <h2 class="headline text-danger">403</h2>
+  <div class="error-content">
+    <h3><i class="fas fa-exclamation-triangle text-danger"></i> Acceso denegado.</h3>
+    <p>
+      No tienes permisos para acceder a este recurso.
+      Puedes <a th:href="@{/}">volver al inicio</a> o <a href="javascript:history.back()">regresar</a> a la página anterior.
+    </p>
+    <p class="mb-0">
+      <span class="text-muted">Ruta:</span>
+      <code th:text="${path}">/desconocida</code>
+    </p>
+  </div>
+</div>
+
+<div th:replace="fragments :: scripts"></div>
+</body>
+</html>

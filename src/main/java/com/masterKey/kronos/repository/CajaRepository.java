@@ -6,4 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface CajaRepository extends JpaRepository<Caja, Long> {
     boolean existsBySucursalIdAndPuntoVentaMhIgnoreCase(Long sucursalId, String puntoVentaMh);
     boolean existsBySucursalIdAndPuntoVentaMhIgnoreCaseAndIdNot(Long sucursalId, String puntoVentaMh, Long id);
+    java.util.List<Caja> findAllBySucursalId(Long sucursalId);
 }

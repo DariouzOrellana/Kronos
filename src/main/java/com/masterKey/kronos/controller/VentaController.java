@@ -267,6 +267,11 @@ public class VentaController extends BaseController{
             String tipoFactura = parametroService.findById("ID_FACTURA")
                     .map(Parametro::getValor)
                     .orElse("01");
+
+            String tipoCff = parametroService.findById("ID_CCF")
+                    .map(Parametro::getValor)
+                    .orElse("03");
+
             String valorIva = parametroService.findById("IVA")
                     .map(Parametro::getValor)
                     .orElse("0.13");
@@ -319,6 +324,41 @@ public class VentaController extends BaseController{
 
             }else{
                 cliente = clienteService.findById(parseLongSafe(clienteIdStr)).get();
+            }
+
+            String msjCliente = "";
+
+            if(!tipoFactura.equals(tipoDocumentoId)){
+                if(cliente.getId() != 1L){
+                    if(cliente.getNoRegistro().isEmpty()){
+                        msjCliente += "\nEl cliente no tiene configurado NRC para facturar";
+                    }
+                    if(cliente.getNit().isEmpty()){
+                        msjCliente += "\nEl cliente no tiene configurado NIT para facturar";
+                    }
+                    if(cliente.getActividadEconomica() == null){
+                        msjCliente += "\nEl cliente no tiene configurado Actividad economica para facturar";
+                    }
+                    if(cliente.getDepartamento() == null || cliente.getMunicipio() == null || cliente.getDireccion().isEmpty()){
+                        msjCliente += "\nEl cliente no tiene configurado departamento, municipio, direccion para facturar";
+                    }
+                    if(cliente.getTelefono().isEmpty()){
+                        msjCliente += "\nEl cliente no tiene configurado telefono para facturar";
+                    }
+                    if(cliente.getCorreo().isEmpty()){
+                        msjCliente += "\nEl cliente no tiene configurado correo para facturar";
+                    }
+                }
+            }
+
+            if(msjCliente.isEmpty()){
+                msjCliente = "OK";
+            }
+
+            if(!"OK".equals(msjCliente)){
+                res.put("ok", false);
+                res.put("message", msjCliente);
+                return ResponseEntity.status(401).body(res);
             }
 
             // Construir Venta

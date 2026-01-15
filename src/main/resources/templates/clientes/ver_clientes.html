@@ -62,12 +62,21 @@
                                         <tbody>
                                         <tr th:each="c : ${clientes}">
                                             <td class="col-actions">
-                                                <a th:href="@{'/clientes/' + ${c.id} + '/editar'}" class="btn btn-primary btn-icon" title="Editar" aria-label="Editar"><i class="fas fa-edit"></i></a>
-                                                <form th:action="@{'/clientes/' + ${c.id} + '/eliminar'}" method="post" class="js-delete-form d-inline-block ml-1">
-                                                    <button type="submit" class="btn btn-danger btn-icon" title="Eliminar" aria-label="Eliminar">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </form>
+                                                <button type="button" class="btn btn-default dropdown-toggle btn-sm" data-toggle="dropdown" aria-expanded="false">
+                                                    <i class="fas fa-th"></i>
+                                                </button>
+                                                <div class="dropdown-menu p-2">
+                                                    <div class="d-flex flex-wrap align-items-center">
+                                                        <a th:href="@{'/clientes/' + ${c.id} + '/editar'}" class="btn btn-primary btn-icon" title="Editar" aria-label="Editar"><i class="fas fa-edit"></i></a>
+                                                        <form th:action="@{'/clientes/' + ${c.id} + '/eliminar'}" method="post" class="js-delete-form d-inline-block ml-1">
+                                                            <button type="submit" class="btn btn-danger btn-icon" title="Eliminar" aria-label="Eliminar">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+
+
                                             </td>
                                             <td class="col-id" th:text="${c.id}"></td>
                                             <td class="text-center">

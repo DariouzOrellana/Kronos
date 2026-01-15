@@ -8,4 +8,5 @@ public interface SucursalRepository extends JpaRepository<Sucursal, Long> {
     boolean existsByEstablecimientoMhIgnoreCase(String establecimientoMh);
     boolean existsByEstablecimientoMhIgnoreCaseAndIdNot(String establecimientoMh, Long id);
     List<Sucursal> findAllByEstado(Integer estado);
+    List<Sucursal> findAllByEmpresaIdAndEstado(Long empresaId, Integer estado);
 }

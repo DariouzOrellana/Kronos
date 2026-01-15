@@ -22,7 +22,10 @@
                     <div class="col-12">
                         <div class="card">
                             <div class="card-body">
-                                <form th:action="@{'/usuarios/' + ${usuario.id} + '/actualizar'}" th:object="${usuario}" method="post" id="formUsuario">
+                                <form th:action="@{'/usuarios/' + ${usuario.id} + '/actualizar'}" th:object="${usuario}" method="post" id="formUsuario"
+                                      th:attr="data-empresa='${usuario.caja != null && usuario.caja.sucursal != null && usuario.caja.sucursal.empresa != null ? usuario.caja.sucursal.empresa.id : null}',
+                                               data-sucursal='${usuario.caja != null && usuario.caja.sucursal != null ? usuario.caja.sucursal.id : null}',
+                                               data-caja='${usuario.caja != null ? usuario.caja.id : null}'">
                                     <div class="form-row">
                                         <div class="form-group col-md-4">
                                             <label for="username">Usuario</label>
@@ -49,13 +52,24 @@
                                     </div>
                                     <div class="form-row">
                                         <div class="form-group col-md-4">
+                                            <label for="empresaId">Empresa</label>
+                                            <select class="form-control select2" id="empresaId" name="empresaId" required>
+                                                <option value="">-- Seleccione --</option>
+                                                <option th:each="e : ${empresas}" th:value="${e.id}" th:text="${e.nombreEmpresa}"></option>
+                                            </select>
+                                            <div class="invalid-feedback">Obligatorio.</div>
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <label for="sucursalId">Sucursal</label>
+                                            <select class="form-control select2" id="sucursalId" name="sucursalId" required>
+                                                <option value="">-- Seleccione --</option>
+                                            </select>
+                                            <div class="invalid-feedback">Obligatorio.</div>
+                                        </div>
+                                        <div class="form-group col-md-4">
                                             <label for="cajaId">Caja</label>
                                             <select class="form-control select2" id="cajaId" name="cajaId" required>
                                                 <option value="">-- Seleccione --</option>
-                                                <option th:each="c : ${cajas}"
-                                                        th:value="${c.id}"
-                                                        th:text="${c.descripcion}"
-                                                        th:selected="${usuario.caja != null} ? ${c.id} == ${usuario.caja.id} : false"></option>
                                             </select>
                                             <div class="invalid-feedback">Obligatorio.</div>
                                             <div class="invalid-feedback d-block" th:if="${cajaError}" th:text="${cajaError}"></div>
@@ -78,25 +92,162 @@
     <footer th:replace="~{fragments.html :: footer}"></footer>
 </div>
 <div th:replace="~{fragments.html :: scripts}"></div>
-<script>
-    document.addEventListener('DOMContentLoaded', function(){
-        const form = document.getElementById('formUsuario');
-        const username = document.getElementById('username');
-        const rolSel = document.getElementById('rolId');
-        const cajaSel = document.getElementById('cajaId');
-        function toggle(el, ok, has){ el.classList.remove('is-valid','valid','is-invalid','invalid'); if(!has) return; (ok?el.classList.add('is-valid','valid'):el.classList.add('is-invalid','invalid')); }
-        function validate(){
-            const uOk = (username.value||'').trim().length>0; toggle(username, uOk, true);
-            const rOk = !!(rolSel && rolSel.value); rolSel && toggle(rolSel, rOk, true);
-            const cOk = !!(cajaSel && cajaSel.value); cajaSel && toggle(cajaSel, cOk, true);
-            return uOk && rOk && cOk;
+<script th:inline="javascript">
+    $(function () {
+
+        /* =========================
+           Inicializar Select2
+        ========================= */
+        if ($.fn.select2) {
+            $('.select2').select2({ width: '100%' });
         }
-        username.addEventListener('input', validate); username.addEventListener('blur', validate);
-        rolSel && rolSel.addEventListener('change', validate);
-        cajaSel && cajaSel.addEventListener('change', validate);
-        form.addEventListener('submit', function(e){ if(!validate()){ e.preventDefault(); e.stopPropagation(); }});
-        if (window.jQuery){ $('.select2').select2({ width: '100%' }); }
+
+        const $form = $('#formUsuario');
+        const $username = $('#username');
+        const $rol = $('#rolId');
+        const $empresa = $('#empresaId');
+        const $sucursal = $('#sucursalId');
+        const $caja = $('#cajaId');
+
+        const empresaId = /*[[${usuario.caja.sucursal.empresa.id}]]*/ "";
+        const sucursalId = /*[[${usuario.caja.sucursal.id}]]*/ "";
+        const cajaId = /*[[${usuario.caja.id}]]*/ "";
+
+        /* =========================
+           Helpers
+        ========================= */
+        function toggle($el, ok) {
+            if (!$el || !$el.length) return;
+
+            let $target = $el;
+            if ($el.hasClass('select2-hidden-accessible')) {
+                $target = $el.next('.select2-container')
+                    .find('.select2-selection');
+            }
+
+            $target.removeClass('is-valid is-invalid');
+            ok ? $target.addClass('is-valid') : $target.addClass('is-invalid');
+        }
+
+        function existsAndValid($el) {
+            return !$el || !$el.length || !!$el.val();
+        }
+
+        /* =========================
+           Validación
+        ========================= */
+        function validate() {
+
+            const uOk = $.trim($username.val()).length > 0;
+            toggle($username, uOk);
+
+            const rOk = existsAndValid($rol);
+            const eOk = existsAndValid($empresa);
+            const sOk = existsAndValid($sucursal);
+            const cOk = existsAndValid($caja);
+
+            toggle($rol, rOk);
+            toggle($empresa, eOk);
+            toggle($sucursal, sOk);
+            toggle($caja, cOk);
+
+            return uOk && rOk && eOk && sOk && cOk;
+        }
+
+        /* =========================
+           Eventos
+        ========================= */
+        $username.on('input blur', validate);
+        $rol.on('change', validate);
+        $caja.on('change', validate);
+
+        $empresa.on('change', function () {
+
+            $sucursal.empty().append(new Option('-- Seleccione --', ''));
+            $caja.empty().append(new Option('-- Seleccione --', ''));
+
+            if (!$(this).val()) return validate();
+
+            fetch(`/sucursales/by-empresa/${$(this).val()}`)
+                .then(r => r.json())
+                .then(data => {
+                    $.each(data, function (_, s) {
+                        $sucursal.append(new Option(s.nombreSucursal, s.id));
+                    });
+                    $sucursal.trigger('change.select2');
+                    validate();
+                });
+        });
+
+        $sucursal.on('change', function () {
+
+            $caja.empty().append(new Option('-- Seleccione --', ''));
+
+            if (!$(this).val()) return validate();
+
+            fetch(`/cajas/by-sucursal/${$(this).val()}`)
+                .then(r => r.json())
+                .then(data => {
+                    $.each(data, function (_, c) {
+                        $caja.append(new Option(c.descripcion, c.id));
+                    });
+                    $caja.trigger('change.select2');
+                    validate();
+                });
+        });
+
+        $form.on('submit', function (e) {
+            if (!validate()) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        });
+
+        /* =========================
+           Precarga en edición
+        ========================= */
+        if (empresaId) {
+
+            $empresa.val(empresaId).trigger('change.select2');
+
+            fetch(`/sucursales/by-empresa/${empresaId}`)
+                .then(r => r.json())
+                .then(sucs => {
+
+                    $sucursal.empty().append(new Option('-- Seleccione --', ''));
+                    $.each(sucs, function (_, s) {
+                        $sucursal.append(new Option(s.nombreSucursal, s.id));
+                    });
+
+                    if (sucursalId) {
+                        $sucursal.val(sucursalId).trigger('change.select2');
+                    }
+
+                    return sucursalId
+                        ? fetch(`/cajas/by-sucursal/${sucursalId}`)
+                        : Promise.resolve([]);
+                })
+                .then(r => r.json ? r.json() : r)
+                .then(cjs => {
+
+                    $caja.empty().append(new Option('-- Seleccione --', ''));
+                    $.each(cjs, function (_, c) {
+                        $caja.append(new Option(c.descripcion, c.id));
+                    });
+
+                    if (cajaId) {
+                        $caja.val(cajaId).trigger('change.select2');
+                    }
+
+                    validate();
+                });
+        } else {
+            validate();
+        }
+
     });
 </script>
+
+
 </body>
 </html>

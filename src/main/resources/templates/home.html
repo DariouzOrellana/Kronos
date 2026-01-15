@@ -52,21 +52,25 @@
           <div class="row">
           <div class="col-12">
             <div class="card">
-              <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
-                <div class="d-flex align-items-center gap-2">
-                  <h3 class="card-title mb-0 mr-3">Ventas por cliente</h3>
-                  <div class="input-group" style="width: 240px;">
-                    <div class="input-group-prepend">
-                      <span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
+              <div class="card-header">
+                <div class="form-row align-items-end">
+                  <div class="col-12 col-md-6 mb-2">
+                    <h3 class="card-title mb-2">Ventas por cliente</h3>
+                    <div class="input-group">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
+                      </div>
+                      <input type="date" id="fechaFiltro" name="fecha" class="form-control" th:value="${fechaSeleccionada}">
                     </div>
-                    <input type="date" id="fechaFiltro" name="fecha" class="form-control" th:value="${fechaSeleccionada}">
                   </div>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                  <h5 class="mb-0 mr-2">Total vendido: <span class="badge badge-primary"><span style="white-space:nowrap" th:text="${'$ ' + #numbers.formatDecimal(totalVendidoHoy, 1, 'COMMA', 2, 'POINT')}"></span></span></h5>
-                  <button type="button" class="btn btn-secondary btn-sm" title="Recargar" onclick="window.location.reload()">
-                    <i class="fas fa-sync"></i>
-                  </button>
+                  <div class="col-12 col-md-4 mb-2 d-flex d-md-block justify-content-between justify-content-md-end">
+                    <h5 class="mb-0">Total vendido: <span class="badge badge-primary"><span style="white-space:nowrap" th:text="${'$ ' + #numbers.formatDecimal(totalVendidoHoy, 1, 'COMMA', 2, 'POINT')}"></span></span></h5>
+                  </div>
+                  <div class="col-12 col-md-2 mb-2">
+                    <button type="button" class="btn btn-secondary btn-sm btn-block" title="Recargar" onclick="window.location.reload()">
+                      <i class="fas fa-sync"></i> <span class="d-none d-md-inline">Recargar</span>
+                    </button>
+                  </div>
                 </div>
               </div>
               <div class="card-body table-responsive p-0" th:classappend="${ventasClienteHoy != null and #lists.size(ventasClienteHoy) > 5} ? ' table-clip-5' : ''">

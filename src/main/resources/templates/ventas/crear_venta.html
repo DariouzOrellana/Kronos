@@ -767,10 +767,16 @@
                         });
                     }
                 }else{
-                    swal.fire({
+                    const errores = data.message.split('\n');
+
+                    Swal.fire({
                         icon: 'error',
-                        title: 'Error',
-                        text: 'Error al guardar la venta: ' + data.message
+                        title: 'Error al guardar la venta',
+                        html: `
+                            <ul style="text-align:left">
+                                ${errores.map(e => `<li>${e}</li>`).join('')}
+                            </ul>
+                        `
                     });
                 }
 

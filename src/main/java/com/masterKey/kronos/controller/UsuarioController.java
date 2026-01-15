@@ -2,6 +2,7 @@ package com.masterKey.kronos.controller;
 
 import com.masterKey.kronos.model.Usuario;
 import com.masterKey.kronos.repository.CajaRepository;
+import com.masterKey.kronos.repository.EmpresaRepository;
 import com.masterKey.kronos.repository.RolRepository;
 import com.masterKey.kronos.repository.UsuarioRepository;
 import com.masterKey.kronos.service.UsuarioService.UsuarioService;
@@ -10,6 +11,7 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Optional;
 
 @Controller
@@ -20,15 +22,18 @@ public class UsuarioController extends BaseController {
     private final UsuarioRepository usuarioRepository;
     private final RolRepository rolRepository;
     private final CajaRepository cajaRepository;
+    private final EmpresaRepository empresaRepository;
 
     public UsuarioController(UsuarioService usuarioService,
                              UsuarioRepository usuarioRepository,
                              RolRepository rolRepository,
-                             CajaRepository cajaRepository) {
+                             CajaRepository cajaRepository,
+                             EmpresaRepository empresaRepository) {
         this.usuarioService = usuarioService;
         this.usuarioRepository = usuarioRepository;
         this.rolRepository = rolRepository;
         this.cajaRepository = cajaRepository;
+        this.empresaRepository = empresaRepository;
     }
 
     @GetMapping
@@ -143,6 +148,20 @@ public class UsuarioController extends BaseController {
 
     private void cargarCatalogos(Model model){
         model.addAttribute("roles", rolRepository.findAll());
-        model.addAttribute("cajas", cajaRepository.findAll());
+        List<com.masterKey.kronos.model.Empresa> empresasActivas = empresaRepository.findAllByEstado(1);
+        Object uObj = model.getAttribute("usuario");
+        if (uObj instanceof Usuario) {
+            Usuario u = (Usuario) uObj;
+            if (u.getCaja() != null && u.getCaja().getSucursal() != null && u.getCaja().getSucursal().getEmpresa() != null) {
+                com.masterKey.kronos.model.Empresa emp = u.getCaja().getSucursal().getEmpresa();
+                if (emp.getId() != null && (emp.getEstado() == null || emp.getEstado() != 1)) {
+                    boolean yaIncluida = empresasActivas.stream().anyMatch(e -> e.getId().equals(emp.getId()));
+                    if (!yaIncluida) {
+                        empresasActivas.add(emp);
+                    }
+                }
+            }
+        }
+        model.addAttribute("empresas", empresasActivas);
     }
 }

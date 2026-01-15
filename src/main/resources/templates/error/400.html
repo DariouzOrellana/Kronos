@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:with="title='Error 400 | Solicitud incorrecta'">
+<head th:replace="fragments :: head"></head>
+<body class="hold-transition error-page">
+
+<div class="error-page">
+  <h2 class="headline text-warning">400</h2>
+  <div class="error-content">
+    <h3>
+      <i class="fas fa-exclamation-triangle text-warning"></i>
+      Solicitud incorrecta
+    </h3>
+    <p>La solicitud no pudo ser procesada debido a un error en la sintaxis o en los datos proporcionados.</p>
+    <p th:if="${message}" th:text="'Detalles: ' + ${message}">Detalles del error</p>
+
+    <p class="mb-1">
+      <span class="text-muted">Ruta:</span>
+      <code th:text="${path}">/desconocida</code>
+    </p>
+    <p class="text-muted" th:if="${timestamp}">
+      <span>Fecha:</span>
+      <span th:text="${#temporals.format(timestamp, 'yyyy-MM-dd HH:mm:ss')}">-</span>
+    </p>
+
+    <div class="mt-3">
+      <a class="btn btn-primary" th:href="@{/}"><i class="fas fa-home"></i> Ir al inicio</a>
+      <a class="btn btn-secondary" href="javascript:history.back()"><i class="fas fa-arrow-left"></i> Volver atrás</a>
+    </div>
+
+    <details class="mt-3" th:if="${trace}">
+      <summary>Ver detalles técnicos</summary>
+      <pre class="mt-2" style="white-space:pre-wrap;max-height:280px;overflow:auto" th:text="${trace}"></pre>
+    </details>
+  </div>
+</div>
+
+<div th:replace="fragments :: scripts"></div>
+</body>
+</html>

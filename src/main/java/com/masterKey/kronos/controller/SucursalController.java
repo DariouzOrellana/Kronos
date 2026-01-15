@@ -183,4 +183,10 @@ public class SucursalController extends BaseController {
         }
         model.addAttribute("empresas", empresasActivas);
     }
+
+    @GetMapping("/by-empresa/{empresaId}")
+    @ResponseBody
+    public List<Sucursal> listarPorEmpresa(@PathVariable Long empresaId) {
+        return sucursalRepository.findAllByEmpresaIdAndEstado(empresaId, 1);
+    }
 }

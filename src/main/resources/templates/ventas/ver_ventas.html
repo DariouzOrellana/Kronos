@@ -49,13 +49,22 @@
                         <!-- Buscador por fecha debajo de las acciones -->
                         <div class="card mb-3">
                             <div class="card-body">
-                                <form th:action="@{/ventas}" method="get" class="form-inline">
-                                    <div class="form-group mb-2 mr-2">
-                                        <label for="fecha" class="mr-2">Fecha</label>
-                                        <input id="fecha" name="fecha" type="date" class="form-control"
-                                               th:value="${#temporals.format(selectedDate, 'yyyy-MM-dd')}">
+                                <form th:action="@{/ventas}" method="get">
+                                    <div class="form-row align-items-end">
+                                        <div class="col-12 col-sm-6 col-md-4 mb-2">
+                                            <label for="fecha">Fecha</label>
+                                            <div class="input-group">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
+                                                </div>
+                                                <input id="fecha" name="fecha" type="date" class="form-control"
+                                                       th:value="${#temporals.format(selectedDate, 'yyyy-MM-dd')}">
+                                            </div>
+                                        </div>
+                                        <div class="col-12 col-sm-auto mb-2 d-flex align-items-end">
+                                            <button type="submit" class="btn btn-primary btn-block">Buscar</button>
+                                        </div>
                                     </div>
-                                    <button type="submit" class="btn btn-primary mb-2">Buscar</button>
                                 </form>
                             </div>
                         </div>
@@ -112,13 +121,13 @@
                                                                                                             </div>
                                                                                                         </div>
                                                                                                         <button
-                                                            th:if="${v.selloMh == null || #strings.isEmpty(v.selloMh)}"
-                                                            th:attr="data-venta-id=${v.id}"
-                                                            title="Enviar DTE"
-                                                            class="btn btn-sm btn-primary btn-procesar-venta"
-                                                    >
-                                                        <i class="fas fa-paper-plane"></i>
-                                                    </button>
+                                                                                                                th:if="${v.selloMh == null || #strings.isEmpty(v.selloMh)}"
+                                                                                                                th:attr="data-venta-id=${v.id}"
+                                                                                                                title="Enviar DTE"
+                                                                                                                class="btn btn-sm btn-primary btn-procesar-venta"
+                                                                                                        >
+                                                                                                            <i class="fas fa-paper-plane"></i>
+                                                                                                        </button>
                                                                                                 </td>
                                                 <td th:text="${v.id}"></td>
                                                 <td>
@@ -315,16 +324,16 @@
                         swal.fire({
                             icon: 'error',
                             title: 'Error',
-                            text: 'Error al guardar la venta: ' + data.message
+                            html: 'Error al procesar dte: ' + data.message
                         });
                     }
 
                 } catch (err) {
                     console.error('Error enviando venta', err);
                     if (window.Swal && typeof Swal.fire === 'function') {
-                        await Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo procesar en el servidor' });
+                        await Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo procesar dte en el servidor' });
                     } else {
-                        alert('No se pudo procesar en el servidor');
+                        alert('No se pudo procesar dte en el servidor');
                     }
                     return false;
                 }

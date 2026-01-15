@@ -157,4 +157,10 @@ public class CajaController extends BaseController {
         }
         model.addAttribute("sucursales", sucursalesActivas);
     }
+
+    @GetMapping("/by-sucursal/{sucursalId}")
+    @ResponseBody
+    public List<Caja> listarPorSucursal(@PathVariable Long sucursalId) {
+        return cajaRepository.findAllBySucursalId(sucursalId);
+    }
 }
