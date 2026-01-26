@@ -49,6 +49,8 @@
                                             <th>ID</th>
                                             <th>Usuario</th>
                                             <th>Rol</th>
+                                            <th>Empresa</th>
+                                            <th>Sucursal</th>
                                             <th>Caja</th>
                                         </tr>
                                         </thead>
@@ -64,8 +66,10 @@
                                             </td>
                                             <td th:text="${u.id}">1</td>
                                             <td th:text="${u.username}">admin</td>
-                                            <td th:text="${u.rol != null ? (u.rol.nombreRol != null ? u.rol.nombreRol : u.rol.id) : ''}">ROL</td>
-                                            <td th:text="${u.caja != null ? (u.caja.descripcion != null ? u.caja.descripcion : u.caja.id) : ''}">CAJA</td>
+                                            <td th:text="${u.rol.nombreRol}">ROL</td>
+                                            <td th:text="${u.caja.sucursal.empresa.nombreEmpresa}">EMPRESA</td>
+                                            <td th:text="${u.caja.sucursal.nombreSucursal}">SUCURSAL</td>
+                                            <td th:text="${u.caja.descripcion}">CAJA</td>
                                         </tr>
                                         </tbody>
                                     </table>

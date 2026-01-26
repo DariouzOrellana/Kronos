@@ -40,6 +40,9 @@ public class VentaDetalle {
     @Column(name = "TOTAL_LINEA", precision = 12, scale = 2, nullable = false)
     private BigDecimal totalLinea = BigDecimal.ZERO;
 
+    @Column(name = "DESCRIPCION", length = 255, nullable = false)
+    private String descripcion = "";
+
     public VentaDetalle() {
     }
 
@@ -113,5 +116,13 @@ public class VentaDetalle {
 
     public void setTotalLinea(BigDecimal totalLinea) {
         this.totalLinea = totalLinea;
+    }
+
+    public String getDescripcion() {
+        return descripcion;
+    }
+
+    public void setDescripcion(String descripcion) {
+        this.descripcion = descripcion;
     }
 }

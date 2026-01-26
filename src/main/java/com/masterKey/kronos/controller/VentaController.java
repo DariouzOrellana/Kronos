@@ -392,6 +392,7 @@ public class VentaController extends BaseController{
             List<Map<String, Object>> items = (List<Map<String, Object>>) payload.getOrDefault("items", List.of());
             for (Map<String, Object> it : items) {
                 String itemId = asString(it.get("id"));
+                String itemDescripcion = asString(it.get("descripcion")); // NUEVO
                 BigDecimal cantidad = getBig(it, "cantidad");
                 BigDecimal precioUnitario = getBig(it, "precioUnitario");
                 BigDecimal itemTotal = getBig(it, "total");
@@ -405,11 +406,20 @@ public class VentaController extends BaseController{
                 if (prodOpt.isEmpty()) {
                     continue; // ignorar si no existe
                 }
+
                 BigDecimal ivaDet = new BigDecimal(valorIva).add(BigDecimal.ONE);
                 BigDecimal subtotalDet = itemTotal.divide(ivaDet, 2, BigDecimal.ROUND_HALF_UP);
+
                 VentaDetalle det = new VentaDetalle();
                 det.setVenta(venta);
                 det.setProducto(prodOpt.get());
+
+                // Descripción personalizada si viene del payload; si no, usar la del producto
+                String desc = (itemDescripcion != null && !itemDescripcion.isBlank())
+                        ? itemDescripcion
+                        : (prodOpt.get().getDescripcion() != null ? prodOpt.get().getDescripcion() : "");
+                det.setDescripcion(desc);
+
                 det.setCantidad(cantidad);
                 det.setPrecioUnitario(precioUnitario);
                 det.setDescuento(BigDecimal.ZERO);
@@ -521,7 +531,7 @@ public class VentaController extends BaseController{
             for (VentaDetalle d : v.getDetalles()) {
                 Map<String, Object> md = new HashMap<>();
                 md.put("productoId", d.getProducto() != null ? d.getProducto().getId() : null);
-                md.put("descripcion", d.getProducto() != null ? d.getProducto().getDescripcion() : "");
+                md.put("descripcion", d.getDescripcion());
                 md.put("cantidad", d.getCantidad());
                 md.put("precioUnitario", d.getPrecioUnitario());
                 md.put("total", d.getTotalLinea());

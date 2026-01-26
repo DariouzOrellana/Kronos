@@ -188,11 +188,8 @@
                                     <!-- Sección de productos/servicios -->
                                     <div class="form-row align-items-end">
                                         <div class="form-group col-12 col-md-5 mb-2 mb-md-0">
-                                            <label for="productoServicio">Seleccione producto/servicio</label>
-                                            <select id="productoServicio" class="form-control select2" name="productoServicio">
-                                                <option value="" disabled selected>Seleccione un item</option>
-                                                <option th:each="p : ${productos}" th:value="${p.id}" th:text="${p.descripcion}" th:data-precio="${p.precio}"></option>
-                                            </select>
+                                            <label for="productoDescripcion">Producto/servicio</label>
+                                            <input type="text" id="productoDescripcion" class="form-control" placeholder="Escriba la descripción del producto o servicio">
                                         </div>
                                         <div class="form-group col-12 col-md-3 mb-2 mb-md-0">
                                             <label for="productoPrecio">Precio</label>
@@ -235,6 +232,12 @@
                                         <div class="col-12 d-flex justify-content-end">
                                             <div class="card" style="min-width: 320px; max-width: 420px;">
                                                 <div class="card-body">
+                                                    <div class="form-group mb-2">
+                                                        <div class="custom-control custom-checkbox">
+                                                            <input type="checkbox" class="custom-control-input" id="precioMasIva" checked>
+                                                            <label class="custom-control-label" for="precioMasIva">Precio + IVA</label>
+                                                        </div>
+                                                    </div>
                                                     <div class="form-group mb-2">
                                                         <label for="subtotal" class="mb-1">Subtotal</label>
                                                         <div class="input-group">
@@ -409,7 +412,18 @@
             tbody.querySelectorAll('tr').forEach(tr => {
                 const qty = toNum(tr.querySelector('.item-cantidad')?.value || '0');
                 const price = toNum(tr.querySelector('.item-precio')?.value || '0');
-                const rowTotal = round2(qty * price);
+                // Calcular total por fila según el modo "Precio + IVA"
+                const precioMasIvaEl = document.getElementById('precioMasIva');
+                const rawIvaRow = toNum(typeof valorIva !== 'undefined' ? valorIva : 0);
+                const ivaRateRow = rawIvaRow > 1 ? rawIvaRow / 100 : rawIvaRow;
+                let rowTotal;
+                if (precioMasIvaEl && precioMasIvaEl.checked) {
+                    // Precio ingresado es neto: sumar IVA al total de la fila
+                    rowTotal = round2(qty * price * (1 + ivaRateRow));
+                } else {
+                    // Precio ingresado incluye IVA: total es qty * price
+                    rowTotal = round2(qty * price);
+                }
                 const totalEl = tr.querySelector('.item-total');
                 if (totalEl) totalEl.value = toMoney(rowTotal);
                 gross += rowTotal;
@@ -419,11 +433,30 @@
         // tasa IVA normalizada
         const rawIva = toNum(typeof valorIva !== 'undefined' ? valorIva : 0);
         const ivaRate = rawIva > 1 ? rawIva / 100 : rawIva;
-        const derivedSubtotal = (1 + ivaRate) > 0 ? (gross / (1 + ivaRate)) : gross;
-        const subtotalRounded = round2(derivedSubtotal);
+        const precioMasIvaEl2 = document.getElementById('precioMasIva');
+        let subtotalRounded;
+        let ivaVal;
+        if (precioMasIvaEl2 && precioMasIvaEl2.checked) {
+            // Modo Precio + IVA: el precio ingresado es neto
+            // Subtotal = suma de (qty * price) sin IVA
+            let netSum = 0;
+            if (tbody) {
+                tbody.querySelectorAll('tr').forEach(tr => {
+                    const qty = toNum(tr.querySelector('.item-cantidad')?.value || '0');
+                    const price = toNum(tr.querySelector('.item-precio')?.value || '0');
+                    netSum += round2(qty * price);
+                });
+            }
+            subtotalRounded = round2(netSum);
+            ivaVal = round2(subtotalRounded * ivaRate);
+            // gross ya representa la suma con IVA
+        } else {
+            // Modo actual: precio incluye IVA, derivar subtotal desde gross
+            const derivedSubtotal = (1 + ivaRate) > 0 ? (gross / (1 + ivaRate)) : gross;
+            subtotalRounded = round2(derivedSubtotal);
+            ivaVal = round2(gross - subtotalRounded);
+        }
         if (subtotalEl) subtotalEl.value = toMoney(subtotalRounded);
-        // Reconciliar IVA como diferencia: iva = gross - subtotal
-        const ivaVal = round2(gross - subtotalRounded);
         const ivaOut = document.getElementById('iva');
         if (ivaOut) ivaOut.value = toMoney(ivaVal);
         // Total mostrado es el bruto sumado de filas
@@ -551,53 +584,31 @@
         } catch(_) { tipoDocFacturaOriginalOptions = null; }
         const btnAdd = document.getElementById('btnAgregarItem');
         if (btnAdd) btnAdd.addEventListener('click', function() {
-            const select = document.getElementById('productoServicio');
+            const descInput = document.getElementById('productoDescripcion');
             const qtyInput = document.getElementById('cantidadAgregar');
             const priceInput = document.getElementById('productoPrecio');
-            if (!select || !qtyInput) return;
-            const opt = select.options[select.selectedIndex];
-            if (!opt || !opt.value) return;
-            const descripcion = opt.text;
-            const precioAttr = opt.getAttribute('data-precio');
-            const precio = toNum((priceInput && priceInput.value) ? priceInput.value : (precioAttr || '0'));
+            if (!descInput || !qtyInput || !priceInput) return;
+            const descripcion = (descInput.value || '').trim();
+            const precio = toNum(priceInput.value || '0');
             const cantidad = toNum(qtyInput.value || '0');
+            if (!descripcion) { try { descInput.focus(); } catch(_){} return; }
             if (cantidad <= 0) return;
-            addItemRowWithValues(descripcion, cantidad, precio, opt.value);
+            addItemRowWithValues(descripcion, cantidad, precio, 1);
+            // Limpiar inputs de captura rápida
+            try { descInput.value = ''; } catch(_){ }
+            try { qtyInput.value = '1'; } catch(_){ }
+            try { priceInput.value = toMoney(precio); } catch(_){ }
         });
 
         // Al cambiar el producto, actualizar y guardar el precio sugerido
-        const selectProducto = document.getElementById('productoServicio');
-        const inputProductoPrecio = document.getElementById('productoPrecio');
-        if (selectProducto && inputProductoPrecio) {
-            const applyPriceFromOption = (opt) => {
-                if (!opt) return;
-                const precioAttr = opt.getAttribute('data-precio');
-                const p = toNum(precioAttr || '0');
-                // Guardar precio seleccionado en data- del select
-                selectProducto.dataset.selectedPrecio = p.toFixed(2);
-                // Setear el input de precio
-                inputProductoPrecio.value = p.toFixed(2);
-            };
+        // Ya no hay select de productos; el precio se ingresa manualmente
 
-            // Cambio en el select nativo (también se dispara con Select2)
-            selectProducto.addEventListener('change', function() {
-                const opt = this.options[this.selectedIndex];
-                applyPriceFromOption(opt);
+        // Recalcular al cambiar el modo "Precio + IVA"
+        const precioMasIvaEl = document.getElementById('precioMasIva');
+        if (precioMasIvaEl) {
+            precioMasIvaEl.addEventListener('change', function(){
+                recalcItemsSubtotal();
             });
-
-            // Evento específico de Select2 por si hiciera falta
-            if (window.jQuery && $.fn && $.fn.select2) {
-                $(selectProducto).on('select2:select', function(e){
-                    const opt = e.params && e.params.data && e.params.data.element ? e.params.data.element : null;
-                    applyPriceFromOption(opt);
-                });
-            }
-
-            // Inicializar si hay un producto preseleccionado
-            const initialOpt = selectProducto.options[selectProducto.selectedIndex];
-            if (initialOpt && initialOpt.value) {
-                applyPriceFromOption(initialOpt);
-            }
         }
 
         // Helpers de validación por tipo de documento general (radios)
