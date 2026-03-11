@@ -9,4 +9,5 @@ import java.util.List;
 @Repository
 public interface ContingenciaRepository extends JpaRepository<Contingencia, Long> {
     List<Contingencia> findAllByOrderByIdDesc();
+    Contingencia findByCodigoGeneracion(String codigo);
 }

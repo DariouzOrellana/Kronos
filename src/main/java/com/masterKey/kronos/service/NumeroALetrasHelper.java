@@ -43,7 +43,7 @@ public class NumeroALetrasHelper {
             letras += " CON " + String.format("%02d", centavos) + "/100";
         }
 
-        return letras.trim();
+        return letras.trim() + " DOLARES";
     }
 
     private String convertirNumero(int numero) {

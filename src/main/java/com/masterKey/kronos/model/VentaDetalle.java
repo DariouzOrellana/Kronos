@@ -43,6 +43,9 @@ public class VentaDetalle {
     @Column(name = "DESCRIPCION", length = 255, nullable = false)
     private String descripcion = "";
 
+    @Column(name = "PRECIO_INCLUYE_IVA", precision = 1)
+    private Integer precioIncluyeIva = 1;
+
     public VentaDetalle() {
     }
 
@@ -124,5 +127,13 @@ public class VentaDetalle {
 
     public void setDescripcion(String descripcion) {
         this.descripcion = descripcion;
+    }
+
+    public Integer getPrecioIncluyeIva() {
+        return precioIncluyeIva;
+    }
+
+    public void setPrecioIncluyeIva(Integer precioIncluyeIva) {
+        this.precioIncluyeIva = precioIncluyeIva;
     }
 }

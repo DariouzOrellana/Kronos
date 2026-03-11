@@ -113,7 +113,7 @@
                                         <div class="form-group col-12 col-md-6">
                                             <label class="d-block">Tipo de documento</label>
                                             <div class="form-control" style="height: auto;">
-                                                <div class="custom-control custom-radio d-inline-block mr-3" th:each="t,iter : ${tiposDocumento}">
+                                                <div class="custom-control custom-radio d-inline-block mr-3" th:each="t,iter : ${tiposDocumento}" th:if="${!(#strings.contains(#strings.toLowerCase(t.nombre), 'nota') and #strings.contains(#strings.toLowerCase(t.nombre), 'credito'))}">
                                                     <input class="custom-control-input" type="radio" th:id="${'tipoDocumento_' + t.id}" name="tipoDocumentoId" th:value="${t.id}" th:checked="${iter.index == 0}" th:attr="data-nombre=${t.nombre}">
                                                     <label class="custom-control-label" th:for="${'tipoDocumento_' + t.id}" th:text="${t.nombre}"></label>
                                                 </div>
@@ -695,6 +695,8 @@
             // Recalcular por si hay cambios
             recalcItemsSubtotal();
 
+            const precioIncluyeIva = (document.getElementById('precioMasIva')?.checked === true) ? 1 : 0;
+
             // Construir items
             const items = [];
             const tbody = document.querySelector('#tablaItems tbody');
@@ -705,7 +707,8 @@
                         descripcion: tr.querySelector('.item-descripcion')?.value || '',
                         cantidad: toNum(tr.querySelector('.item-cantidad')?.value || '0'),
                         precioUnitario: toNum(tr.querySelector('.item-precio')?.value || '0'),
-                        total: toNum(tr.querySelector('.item-total')?.value || '0')
+                        total: toNum(tr.querySelector('.item-total')?.value || '0'),
+                        precioIncluyeIva: precioIncluyeIva
                     });
                 });
             }
@@ -713,12 +716,12 @@
             return {
                 clienteId: document.getElementById('cliente')?.value || null,
                 tipoDocumentoId: (document.querySelector('input[name="tipoDocumentoId"]:checked')?.value) || null,
-                productoServicioId: document.getElementById('productoServicio')?.value || null,
                 nombre_factura: document.getElementById('nombreFactura')?.value || '',
                 tipo_doc_factura: document.getElementById('tipoDocFactura')?.value || '',
                 doc_factura: document.getElementById('docFactura')?.value || '',
                 correo: document.getElementById('correoFactura')?.value || '',
                 ventaIdNc: document.getElementById('ventaIdNc')?.value || null,
+                precioIncluyeIva: precioIncluyeIva,
                 montos: {
                     subtotal: toNum(document.getElementById('subtotal')?.value || '0'),
                     iva: toNum(document.getElementById('iva')?.value || '0'),
@@ -1316,9 +1319,21 @@
             r.addEventListener('change', function(){
                 updateNombreFacturaByTipo();
                 applyRetencionIfNeeded();
-                updateNcSectionVisibility();
+                try { updateNcSectionVisibility(); } catch(_){ }
             });
         });
+
+        // Ocultar la opción de Nota de Crédito en el radio al crear una venta
+        try {
+            document.querySelectorAll('input[name="tipoDocumentoId"]').forEach(r => {
+                const nombre = (r.getAttribute('data-nombre') || '').toString();
+                const norm = (typeof normalizeStr === 'function') ? normalizeStr(nombre) : nombre.toLowerCase();
+                if (norm.includes('nota') && norm.includes('credito')) {
+                    const wrap = r.closest('.custom-control');
+                    if (wrap) wrap.style.display = 'none';
+                }
+            });
+        } catch(_){ }
 
         // Enlazar cambio de cliente (nativo y Select2)
         const clienteSel = document.getElementById('cliente');

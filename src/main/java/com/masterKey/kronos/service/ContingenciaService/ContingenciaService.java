@@ -8,4 +8,6 @@ public interface ContingenciaService {
     public Contingencia save(Contingencia contingencia);
     public List<Contingencia> findAllOrderByIdDesc();
     Contingencia findById(Long id);
+    Contingencia findByCodigoGeneracion(String codigoGeneracion);
+
 }

@@ -57,6 +57,7 @@ public class VentaController extends BaseController{
     private final SenderHelper senderHelper;
     private final JasperReportService jasperReportService;
     private final EmailService emailService;
+    private final DteHelper dteHelper;
 
     @Autowired
     public VentaController(VentaService ventaService,
@@ -70,7 +71,7 @@ public class VentaController extends BaseController{
                            JsonHelper jsonHelper,
                            SenderHelper senderHelper,
                            JasperReportService jasperReportService,
-                           EmailService emailService) {
+                           EmailService emailService, DteHelper dteHelper) {
         this.ventaService = ventaService;
         this.clienteService = clienteService;
         this.tipoDocumentoService = tipoDocumentoService;
@@ -83,6 +84,7 @@ public class VentaController extends BaseController{
         this.senderHelper = senderHelper;
         this.jasperReportService = jasperReportService;
         this.emailService = emailService;
+        this.dteHelper = dteHelper;
     }
 
     @GetMapping
@@ -121,18 +123,30 @@ public class VentaController extends BaseController{
 
     @GetMapping(value = "/pruebitas/{id}", produces = MediaType.APPLICATION_PDF_VALUE)
     @ResponseBody
-    public ResponseEntity<byte[]> verPruebitas(@PathVariable Long id) throws Exception {
+    public String verPruebitas(@PathVariable Long id) throws Exception {
         //dteHelper.setearCodigoGeneracion(13L);
         //dteHelper.setearNumeroControl(13L);
         //String uid = UUID.randomUUID().toString().toUpperCase();
         //String json = jsonHelper.generarJsonCff(43L);
 
-        byte[] pdf = jasperReportService.generarReporteDte(id);
-        return ResponseEntity.ok()
+        //byte[] pdf = jasperReportService.generarReporteDte(id);
+        /*return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=prueba.pdf")
-                .body(pdf);
+                .body(pdf);*/
 
         //return json;
+
+        for(Integer i = 0; i < 100; i++){
+            Venta vta = ventaService.findById(id);
+            vta.setCodigoGeneracion(null);
+            vta.setNumeroControl(null);
+            vta.setSelloMh(null);
+            ventaService.save(vta);
+            senderHelper.enviarDte(vta.getId());
+        }
+
+
+        return "OK";
     }
 
     @GetMapping("/generar_pdf")
@@ -259,7 +273,6 @@ public class VentaController extends BaseController{
     }
 
     @PostMapping("/guardar")
-    @Transactional
     public ResponseEntity<?> ventaSave(@RequestBody Map<String, Object> payload, HttpSession session){
         try {
             Map<String, Object> res = new HashMap<>();
@@ -285,6 +298,12 @@ public class VentaController extends BaseController{
             String correo = asString(payload.get("correo"));
             // Para nota de crédito: venta referenciada
             String ventaIdNcStr = asString(payload.get("ventaIdNc"));
+
+            Integer precioIncluyeIva = 1;
+            try {
+                Object piv = payload.get("precioIncluyeIva");
+                if (piv != null) precioIncluyeIva = Integer.valueOf(String.valueOf(piv));
+            } catch (Exception ignored) {}
 
             // Montos
             @SuppressWarnings("unchecked")
@@ -376,6 +395,7 @@ public class VentaController extends BaseController{
             venta.setRetencion(retencion);
             venta.setPercepcion(percepcion);
             venta.setTotal(total);
+            venta.setPrecioIncluyeIva(precioIncluyeIva);
 
             // Si viene ventaIdNc en payload, setearlo
             Long ventaIdNcLong = parseLongSafe(ventaIdNcStr);
@@ -396,6 +416,11 @@ public class VentaController extends BaseController{
                 BigDecimal cantidad = getBig(it, "cantidad");
                 BigDecimal precioUnitario = getBig(it, "precioUnitario");
                 BigDecimal itemTotal = getBig(it, "total");
+                Integer detPrecioIncluyeIva = precioIncluyeIva;
+                try {
+                    Object pivDet = it.get("precioIncluyeIva");
+                    if (pivDet != null) detPrecioIncluyeIva = Integer.valueOf(String.valueOf(pivDet));
+                } catch (Exception ignored) {}
 
                 Long productoId = parseLongSafe(itemId);
                 if (productoId == null) {
@@ -419,23 +444,25 @@ public class VentaController extends BaseController{
                         ? itemDescripcion
                         : (prodOpt.get().getDescripcion() != null ? prodOpt.get().getDescripcion() : "");
                 det.setDescripcion(desc);
+                det.setPrecioIncluyeIva(detPrecioIncluyeIva);
 
                 det.setCantidad(cantidad);
                 det.setPrecioUnitario(precioUnitario);
                 det.setDescuento(BigDecimal.ZERO);
+
                 det.setSubTotal(subtotalDet);
                 det.setIva(subtotalDet.multiply(new BigDecimal(valorIva)));
                 det.setTotalLinea(itemTotal);
                 detalles.add(det);
             }
 
-
             if (!detalles.isEmpty()) {
                 venta.setDetalles(detalles);
                 //ventaDetalleService.saveAll(detalles);
-                // Persistir Venta primero (para obtener ID)
-                venta = ventaService.save(venta);
             }
+
+            // Persistir Venta primero (para obtener ID)
+            venta = ventaService.save(venta);
 
             String respuestaMh = senderHelper.enviarDte(venta.getId());
             ObjectMapper mapper = new ObjectMapper();
@@ -447,6 +474,7 @@ public class VentaController extends BaseController{
             res.put("ventaId", venta.getId());
             res.put("respuestaMh", respuestaMhObj);
             return ResponseEntity.ok(res);
+
         }catch (Exception ex){
             ex.printStackTrace();
             Map<String, Object> res = new HashMap<>();
@@ -476,8 +504,10 @@ public class VentaController extends BaseController{
         }catch ( Exception ex ){
             res.put("ok", false);
             res.put("message", "Error al enviar la Venta: " + ex.getMessage());
+            System.out.println("Error al enviar la Venta: " + ex.getMessage());
             return ResponseEntity.internalServerError().body(res);
         }
+
         return ResponseEntity.ok(res);
     }
 

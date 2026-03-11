@@ -62,10 +62,16 @@
                                                         th:attr="data-venta-id=${inv.venta.id},data-email=${inv.venta.correo}">
                                                     <i class="fas fa-envelope"></i>
                                                 </button>
-                                                <a th:href="@{'/ventas/' + ${inv.venta.id} + '/pdf'}" class="btn btn-sm btn-secondary" title="Ver PDF" target="_blank" rel="noopener noreferrer">
+                                                <a th:href="@{/ventas/generar_pdf(
+                                                        codigoGeneracion=${inv.venta.codigoGeneracion},
+                                                        fecEmi=${#temporals.format(inv.venta.fecha, 'yyyy-MM-dd')}
+                                                    )}" class="btn btn-sm btn-secondary" title="Ver PDF" target="_blank" rel="noopener noreferrer">
                                                     <i class="fas fa-file-pdf"></i>
                                                 </a>
-                                                <a th:href="@{'/ventas/' + ${inv.venta.id} + '/json'}" class="btn btn-sm btn-secondary" title="Ver JSON" target="_blank" rel="noopener noreferrer">
+                                                <a th:href="@{/ventas/generar_json(
+                                                        codigoGeneracion=${inv.venta.codigoGeneracion},
+                                                        fecEmi=${#temporals.format(inv.venta.fecha, 'yyyy-MM-dd')}
+                                                    )}" class="btn btn-sm btn-secondary" title="Ver JSON" target="_blank" rel="noopener noreferrer">
                                                     <i class="fas fa-code"></i>
                                                 </a>
                                                 <button
@@ -142,14 +148,51 @@
 
 <script>
 
-    // Handler del botón Enviar (stub para que agregues tu lógica)
+    // Handler del botón Enviar
     $('#btnModalEnviarCorreo').on('click', function(){
         const ventaId = $('#correoVentaId').val();
         const email = $('#correoDestino').val();
-        // TODO: Implementar lógica para enviar correo (fetch/POST)
-        console.log('Enviar correo - Venta ID:', ventaId, 'Email:', email);
-        // Cerrar modal tras stub
-        $('#modalEnviarCorreo').modal('hide');
+
+        Swal.fire({
+            title: 'Enviando correo...',
+            text: 'Por favor espere',
+            icon: 'info',
+            allowOutsideClick: false,
+            didOpen: Swal.showLoading
+        });
+
+        const formData = new FormData();
+        formData.append('idVenta', ventaId);
+        formData.append('correoDestinatario', email);
+
+        fetch('/ventas/enviar-correo', {
+            method: 'POST',
+            body: formData
+        })
+            .then(async response => {
+                const text = await response.text();
+
+                if (!response.ok) {
+                    throw new Error(text || 'Error al enviar el correo');
+                }
+
+                return text;
+            })
+            .then(msg => {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Correo enviado',
+                    text: msg || 'Correo en proceso de envío'
+                });
+                $('#modalEnviarCorreo').modal('hide');
+            })
+            .catch(err => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: err.message || 'No se pudo enviar el correo'
+                });
+            });
     });
 
     // Abrir modal de correo, precargar ventaId y correo

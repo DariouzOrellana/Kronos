@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.tags.Param;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class SenderHelper {
@@ -52,6 +53,12 @@ public class SenderHelper {
 
         Contingencia contingencia = contingenciaService.findById(idContingencia);
 
+
+        List<ContingenciaDetalle> contingenciaDetalles = contingencia.getDetalles();
+        for (ContingenciaDetalle det : contingenciaDetalles) {
+            dteHelper.setearCodigoGeneracion(det.getVenta().getId());
+            dteHelper.setearNumeroControl(det.getVenta().getId());
+        }
         String json = jsonHelper.generarContingenciaJson(idContingencia);
 
         System.out.println("JSON GENERADO");
@@ -83,6 +90,10 @@ public class SenderHelper {
         Invalidacion invalidacion = invalidacionService.findByVentaId(idVenta);
 
         String json = jsonHelper.generarInvalidacion_Json(idVenta);
+        String idFactura = parametros.findById("ID_FACTURA").map(Parametro::getValor).orElse("01");
+        String idCff = parametros.findById("ID_CCF").map(Parametro::getValor).orElse("03");
+        String idNc = parametros.findById("ID_NC").map(Parametro::getValor).orElse("05");
+
 
         System.out.println("JSON GENERADO");
         System.out.println("==========================================================");
@@ -105,9 +116,39 @@ public class SenderHelper {
             invalidacion.setSelloInvalidacion(respuestaMH.get("selloRecibido").asText());
             invalidacionService.save(invalidacion);
             Venta venta = ventaService.findById(idVenta);
+            String jsonDoc = "";
+            if(venta.getTipoDocumento().getId().equals(idFactura)){
+                jsonDoc = jsonHelper.generarJsonFac(idVenta);
+            }
+            if(venta.getTipoDocumento().getId().equals(idCff)){
+                jsonDoc = jsonHelper.generarJsonCff(idVenta);
+            }
+            if(venta.getTipoDocumento().getId().equals(idNc)){
+                jsonDoc = jsonHelper.generarJsonNc(idVenta);
+            }
             venta.setCodigoGeneracionAnulacion(invalidacion.getCodigoGeneracion());
             venta.setEstado(0);
             ventaService.save(venta);
+
+            try {
+                ObjectMapper mapperJson = new ObjectMapper();
+                JsonNode jsonNode = mapperJson.readTree(jsonDoc);
+                String correo = "null";
+                try {
+                    correo = jsonNode.get("documento").get("receptor").get("correo").asText();
+                } catch (Exception ignored) {
+                    try {
+                        correo = jsonNode.get("receptor").get("correo").asText();
+                    } catch (Exception ignored2) {
+                        correo = "null";
+                    }
+                }
+
+                if(correo != null && !correo.isBlank() && !correo.equals("null")){
+                    emailService.enviarCorreoInvalidacion(idVenta, correo);
+                }
+            } catch (Exception ignored) {
+            }
         }
 
 
@@ -162,25 +203,28 @@ public class SenderHelper {
         respuestaDte.setSelloMh(respuestaMH.get("estado").asText() == "PROCESADO" ? respuestaMH.get("selloRecibido").asText() : null);
         respuestaDte.setFecha(LocalDateTime.now());
         respuestaDteMhService.save(respuestaDte);
-
+        String correo = "null";
         if(respuestaMH.get("estado").asText().equals("RECHAZADO")){
             venta.setIntentos(venta.getIntentos()+1);
         }else if(respuestaMH.get("estado").asText().equals("PROCESADO")){
             ObjectMapper mapperJson = new ObjectMapper();
             JsonNode jsonNode = mapperJson.readTree(json);
 
-            if(!jsonNode.get("receptor").get("correo").asText().isEmpty()){
-                emailService.enviarCorreo(idVenta, jsonNode.get("receptor").get("correo").asText());
+            correo = jsonNode.get("receptor").get("correo").asText();
+            if(!correo.equals("null")){
+                emailService.enviarCorreo(idVenta, correo);
             }
-
             venta.setSelloMh(respuestaMH.get("selloRecibido").asText());
             //venta.setContingencia(0);
             //venta.setCodigoGeneracionAnulacion(null);
             //venta.setCodigoGeneracionContingencia(null);
             venta.setEstado(1);
             venta.setContingencia(null);
+
         }
         ventaService.save(venta);
+
+
 
         return respuesta;
     }

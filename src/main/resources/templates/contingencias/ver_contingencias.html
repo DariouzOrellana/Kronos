@@ -118,7 +118,6 @@
 <script>
     $(".enviarContingencia").click(function () {
         const contingenciaId = $(this).data('contingencia-id');
-        alert("Enviando...");
         enviarDteContingencia(contingenciaId);
     });
 
@@ -148,11 +147,12 @@
 
             if (data.ok) {
 
-                if (data.respuestaMh.estado === "PROCESADO") {
+                const estadoMh = (data.respuestaMh && data.respuestaMh.estado) ? String(data.respuestaMh.estado).toUpperCase() : '';
+                if (estadoMh === "PROCESADO" || estadoMh === "RECIBIDO") {
                     Swal.fire({
                         icon: 'success',
-                        title: 'Contingencia procesada',
-                        text: 'Proceder a procesar las ventas en contingencia'
+                        title: (estadoMh === 'RECIBIDO') ? 'Contingencia recibida' : 'Contingencia procesada',
+                        text: (estadoMh === 'RECIBIDO') ? 'Evento recibido por MH. Se recargará la página.' : 'Proceder a procesar las ventas en contingencia'
                     }).then(() => {
                         window.location.reload();
                     });

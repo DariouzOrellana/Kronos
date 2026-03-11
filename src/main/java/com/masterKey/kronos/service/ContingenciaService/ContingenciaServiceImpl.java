@@ -31,4 +31,8 @@ public class ContingenciaServiceImpl implements ContingenciaService{
     public Contingencia findById(Long id){
         return contingenciaRepository.findById(id).get();
     }
+    @Override
+    public Contingencia findByCodigoGeneracion(String codigoGeneracion){
+        return contingenciaRepository.findByCodigoGeneracion(codigoGeneracion);
+    }
 }

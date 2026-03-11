@@ -219,6 +219,13 @@
             text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
         }
 
+        .app-version {
+            margin-top: 4px;
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.85);
+            letter-spacing: 0.5px;
+        }
+
 
     </style>
 </head>
@@ -227,7 +234,8 @@
 
         <div class="logo-container">
             <img th:src="@{/img/master_key.png}" alt="Logo Cerrajería" class="logo">
-            <h1 class="company-name">MASTERKEY - DTE</h1>
+            <h1 class="company-name">MASTER KEY - DTE</h1>
+            <div class="app-version">Versión 2.0</div>
         </div>
     <form th:action="@{/perform_login}" method="post">
 

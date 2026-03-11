@@ -67,6 +67,9 @@ public class Venta {
     @Column(name = "TOTAL", precision = 12, scale = 2, nullable = false)
     private BigDecimal total = BigDecimal.ZERO;
 
+    @Column(name = "PRECIO_INCLUYE_IVA", precision = 1)
+    private Integer precioIncluyeIva = 1;
+
     @Column(name = "CODIGO_GENERACION_CONTINGENCIA", length = 100)
     private String codigoGeneracionContingencia = "";
 
@@ -226,6 +229,14 @@ public class Venta {
 
     public void setTotal(BigDecimal total) {
         this.total = total;
+    }
+
+    public Integer getPrecioIncluyeIva() {
+        return precioIncluyeIva;
+    }
+
+    public void setPrecioIncluyeIva(Integer precioIncluyeIva) {
+        this.precioIncluyeIva = precioIncluyeIva;
     }
 
     public String getCodigoGeneracionContingencia() {

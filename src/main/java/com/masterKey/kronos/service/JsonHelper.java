@@ -13,6 +13,7 @@ import com.masterKey.kronos.service.VentaService.VentaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -299,7 +300,7 @@ public class JsonHelper {
         identificacion.put("codigoGeneracion", venta.getCodigoGeneracion());
 
         if(venta.getContingencia() != null){
-            Contingencia contingencia = contingenciaService.findById(Long.valueOf(venta.getContingencia()));
+            Contingencia contingencia = contingenciaService.findByCodigoGeneracion(venta.getCodigoGeneracionContingencia());
 
             identificacion.put("tipoModelo", 2);
             identificacion.put("tipoOperacion", 2);
@@ -380,7 +381,7 @@ public class JsonHelper {
             receptor.put("numDocumento", venta.getCliente().getNit().replace("-", ""));
         }else{
             receptor.put("tipoDocumento", tipoDocumentoReceptor.isEmpty() ? null : tipoDocumentoReceptor);
-            receptor.put("numDocumento", venta.getDocFactura() == null ? null : venta.getDocFactura().replace("-", ""));
+            receptor.put("numDocumento", venta.getDocFactura() == null ? null : venta.getDocFactura());
         }
 
         receptor.put("nombre", venta.getNombreFactura() == null ? "CONSUMIDOR FINAL" : venta.getNombreFactura());
@@ -422,16 +423,22 @@ public class JsonHelper {
             item.putNull("numeroDocumento");
             item.put("codigo", vt.getProducto().getId().toString());
             item.putNull("codTributo");
-            item.put("descripcion", vt.getProducto().getDescripcion());
+            item.put("descripcion", vt.getDescripcion());
             item.put("cantidad", vt.getCantidad());
 
             //Unidad de medida 59, (Unidad)
             item.put("uniMedida", 59);
-            item.put("precioUni", vt.getPrecioUnitario());
+            if(vt.getPrecioIncluyeIva() == 1){
+                item.put("precioUni", vt.getPrecioUnitario().add(vt.getIva()));
+                item.put("ventaGravada", vt.getTotalLinea());
+
+            }else{
+                item.put("precioUni", vt.getPrecioUnitario());
+                item.put("ventaGravada", vt.getTotalLinea());
+            }
             item.put("montoDescu", vt.getDescuento());
             item.put("ventaNoSuj", 0.0);
             item.put("ventaExenta", 0.0);
-            item.put("ventaGravada", vt.getSubTotal());
             item.putNull("tributos");
             item.put("ivaItem", vt.getIva());
             item.put("psv", 0.0);
@@ -443,8 +450,8 @@ public class JsonHelper {
         ObjectNode resumen = root.putObject("resumen");
         resumen.put("totalNoSuj", 0.0);
         resumen.put("totalExenta", 0.0);
-        resumen.put("totalGravada", venta.getSubtotal());
-        resumen.put("subTotalVentas", venta.getSubtotal());
+        resumen.put("totalGravada", venta.getTotal());
+        resumen.put("subTotalVentas", venta.getTotal());
         resumen.put("descuNoSuj", 0.0);
         resumen.put("descuExenta", 0.0);
         resumen.put("descuGravada", venta.getDescuento());
@@ -456,7 +463,7 @@ public class JsonHelper {
         resumen.put("saldoFavor", 0);
         resumen.putNull("tributos");
 
-        resumen.put("subTotal", venta.getSubtotal());
+        resumen.put("subTotal", venta.getTotal());
         resumen.put("totalIva", venta.getIva());
         resumen.put("montoTotalOperacion", venta.getTotal());
         resumen.put("totalPagar", venta.getTotal());
@@ -486,7 +493,7 @@ public class JsonHelper {
         }
 
         // ========== Salida JSON bonita ==========
-        String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(root);
+        String json = root.toString();
 
         return json;
     }
@@ -615,16 +622,24 @@ public class JsonHelper {
             item.putNull("numeroDocumento");
             item.put("codigo", vt.getProducto().getId().toString());
             item.putNull("codTributo");
-            item.put("descripcion", vt.getProducto().getDescripcion());
+            item.put("descripcion", vt.getDescripcion());
             item.put("cantidad", vt.getCantidad());
 
             //Unidad de medida 59, (Unidad)
             item.put("uniMedida", 59);
-            item.put("precioUni", vt.getPrecioUnitario());
             item.put("montoDescu", vt.getDescuento());
+
+            if(vt.getPrecioIncluyeIva() == 0){
+                item.put("precioUni", vt.getPrecioUnitario().subtract(vt.getIva()));
+                item.put("ventaGravada", vt.getSubTotal());
+
+            }else{
+                item.put("precioUni", vt.getPrecioUnitario());
+                item.put("ventaGravada", vt.getSubTotal());
+            }
+
             item.put("ventaNoSuj", 0.0);
             item.put("ventaExenta", 0.0);
-            item.put("ventaGravada", vt.getSubTotal());
             ArrayNode tributosItem = item.putArray("tributos");
             tributosItem.add("20");
             item.put("psv", 0.0);
@@ -822,7 +837,7 @@ public class JsonHelper {
             item.put("numeroDocumento", ventaNc.getCodigoGeneracion());
             item.put("codigo", vt.getProducto().getId().toString());
             item.putNull("codTributo");
-            item.put("descripcion", vt.getProducto().getDescripcion());
+            item.put("descripcion", vt.getDescripcion());
             item.put("cantidad", vt.getCantidad());
 
             //Unidad de medida 59, (Unidad)

@@ -46,7 +46,7 @@ public class HelperServiceImpl implements HelperService {
         System.out.println("Duración en horas:minutos -> " + duracion.toHours() + "h " + duracion.toMinutesPart() + "m");
 
         // Revisar tokenMH
-        parametroService.findById("tokenMH").ifPresentOrElse(
+        parametroService.findById("MH_TOKEN").ifPresentOrElse(
                 p -> {
                     System.out.println("Verificando tokenMH...");
                     LocalDateTime ultActualizacion = p.getUpdatedAt();
@@ -69,12 +69,13 @@ public class HelperServiceImpl implements HelperService {
                     } else {
                         System.out.println("✅ TokenMH aún vigente, no se actualiza.");
                     }
+
                 },
                 () -> {
                     System.out.println("El parámetro tokenMH no existe, creándolo...");
                     Parametro parametro = new Parametro();
                     parametro.setNombreParametro("tokenMH");
-                    parametro.setValor("PRUEBITAS"); // Mh.obtenerToken()
+                    parametro.setValor(dteHelper.obtenerTokenMH()); //
                     parametro.setCreatedAt(LocalDateTime.now());
                     parametro.setUpdatedAt(LocalDateTime.now());
                     parametroService.save(parametro);
